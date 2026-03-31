@@ -1,0 +1,68 @@
+name: Build and Push Docker Image
+
+on:
+  workflow_call:
+    inputs:
+      push-image:
+        description: Push image to registry.
+        required: false
+        type: boolean
+        default: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v4
+
+      - name: Log in to GitHub Container Registry
+        if: ${{ inputs.push-image }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=raw,value=staging,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha
+
+      - name: Build and push Docker image
+        id: push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ inputs.push-image }}
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            VITE_CLIENT_ID=213d5d77-c055-4163-8e6a-56a666a924d2
+            VITE_TENANT_ID=3a680226-db04-4df3-95bd-37b631e11597
+            VITE_API_SCOPE=api://d9785590-322c-48e6-ba58-a00aabb5aee5/access_as_user
+            VITE_BUILD_COMMIT=${{ github.sha }}
+            VITE_BUILD_TAG=${{ github.ref_type == 'tag' && github.ref_name || '' }}
+            VITE_BUILD_BRANCH=${{ github.ref_name }}
+            VITE_BUILD_TIME=${{ github.event.head_commit.timestamp || github.event.repository.updated_at }}

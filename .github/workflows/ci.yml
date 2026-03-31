@@ -1,0 +1,410 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: ${{ vars.CI_PYTHON_VERSION || '3.12' }}
+  PYTHON_TEST_VERSIONS: ${{ vars.CI_PYTHON_TEST_VERSIONS || '["3.11","3.12","3.13"]' }}
+  PYTHON_INSTALL_SPEC: ${{ vars.CI_PYTHON_INSTALL_SPEC || '.[dev]' }}
+  PYTHON_COMPILE_FILES: ${{ vars.CI_PYTHON_COMPILE_FILES || '' }}
+  PYTHON_COVERAGE_TARGET: ${{ vars.CI_PYTHON_COVERAGE_TARGET || '' }}
+  PYTHON_COVERAGE_THRESHOLD: ${{ vars.CI_PYTHON_COVERAGE_THRESHOLD || '85' }}
+  FRONTEND_NODE_VERSION: ${{ vars.CI_FRONTEND_NODE_VERSION || '22' }}
+  FRONTEND_WORKDIR: ${{ vars.CI_FRONTEND_WORKDIR || 'frontend' }}
+
+jobs:
+  # ── Detect project layout ──────────────────────────────────────────
+  detect-stack:
+    name: Detect stack
+    runs-on: ubuntu-latest
+    outputs:
+      has-python: ${{ steps.detect.outputs.has-python }}
+      has-frontend: ${{ steps.detect.outputs.has-frontend }}
+      has-e2e: ${{ steps.detect.outputs.has-e2e }}
+      has-docker: ${{ steps.detect.outputs.has-docker }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Detect components
+        id: detect
+        run: |
+          has_python=false
+          has_frontend=false
+          has_e2e=false
+          has_docker=false
+
+          if [ -f pyproject.toml ] || [ -f setup.py ] || [ -f requirements.txt ]; then
+            has_python=true
+          fi
+
+          if [ -f "${FRONTEND_WORKDIR}/package.json" ]; then
+            has_frontend=true
+          fi
+
+          if [ -f "${FRONTEND_WORKDIR}/playwright.config.ts" ] || [ -f "${FRONTEND_WORKDIR}/playwright.config.js" ] || [ -f "${FRONTEND_WORKDIR}/playwright.config.mjs" ] || [ -f "${FRONTEND_WORKDIR}/playwright.config.cjs" ]; then
+            has_e2e=true
+          fi
+
+          if [ -f Dockerfile ]; then
+            has_docker=true
+          fi
+
+          echo "has-python=${has_python}" >> "$GITHUB_OUTPUT"
+          echo "has-frontend=${has_frontend}" >> "$GITHUB_OUTPUT"
+          echo "has-e2e=${has_e2e}" >> "$GITHUB_OUTPUT"
+          echo "has-docker=${has_docker}" >> "$GITHUB_OUTPUT"
+
+  # ── Python ────────────────────────────────────────────────────────
+  py-lint:
+    name: Python Lint
+    if: needs.detect-stack.outputs.has-python == 'true'
+    needs: [detect-stack]
+    uses: ./.github/workflows/python-lint.yml
+    with:
+      python-version: ${{ vars.CI_PYTHON_VERSION || '3.12' }}
+      install-spec: ${{ vars.CI_PYTHON_INSTALL_SPEC || '.[dev]' }}
+
+  py-build:
+    name: Python Build
+    if: needs.detect-stack.outputs.has-python == 'true'
+    needs: [detect-stack]
+    uses: ./.github/workflows/python-ci.yml
+    with:
+      python-version: ${{ vars.CI_PYTHON_VERSION || '3.12' }}
+      install-spec: ${{ vars.CI_PYTHON_INSTALL_SPEC || '.[dev]' }}
+      compile-files: ${{ vars.CI_PYTHON_COMPILE_FILES || '' }}
+
+  py-test:
+    name: Python Test
+    if: needs.detect-stack.outputs.has-python == 'true'
+    needs: [detect-stack]
+    uses: ./.github/workflows/python-tests.yml
+    with:
+      python-versions: ${{ vars.CI_PYTHON_TEST_VERSIONS || '["3.11","3.12","3.13"]' }}
+      install-spec: ${{ vars.CI_PYTHON_INSTALL_SPEC || '.[dev]' }}
+      coverage-target: ${{ vars.CI_PYTHON_COVERAGE_TARGET || '' }}
+      coverage-threshold: ${{ fromJSON(vars.CI_PYTHON_COVERAGE_THRESHOLD || '85') }}
+
+  # ── Frontend ──────────────────────────────────────────────────────
+  fe-lint:
+    name: Frontend Lint
+    if: needs.detect-stack.outputs.has-frontend == 'true'
+    needs: [detect-stack]
+    uses: ./.github/workflows/frontend-lint.yml
+    with:
+      node-version: ${{ vars.CI_FRONTEND_NODE_VERSION || '22' }}
+      working-directory: ${{ vars.CI_FRONTEND_WORKDIR || 'frontend' }}
+
+  fe-build:
+    name: Frontend Build
+    if: needs.detect-stack.outputs.has-frontend == 'true'
+    needs: [detect-stack]
+    uses: ./.github/workflows/frontend-build.yml
+    with:
+      node-version: ${{ vars.CI_FRONTEND_NODE_VERSION || '22' }}
+      working-directory: ${{ vars.CI_FRONTEND_WORKDIR || 'frontend' }}
+
+  fe-unit:
+    name: Frontend Unit
+    if: needs.detect-stack.outputs.has-frontend == 'true'
+    needs: [detect-stack]
+    uses: ./.github/workflows/frontend-unit.yml
+    with:
+      node-version: ${{ vars.CI_FRONTEND_NODE_VERSION || '22' }}
+      working-directory: ${{ vars.CI_FRONTEND_WORKDIR || 'frontend' }}
+
+  fe-e2e:
+    name: Frontend E2E
+    if: needs.detect-stack.outputs.has-frontend == 'true' && needs.detect-stack.outputs.has-e2e == 'true' && needs.detect-stack.outputs.has-python == 'true'
+    needs: [detect-stack]
+    uses: ./.github/workflows/frontend-e2e.yml
+    with:
+      python-version: ${{ vars.CI_PYTHON_VERSION || '3.12' }}
+      node-version: ${{ vars.CI_FRONTEND_NODE_VERSION || '22' }}
+      install-spec: ${{ vars.CI_PYTHON_INSTALL_SPEC || '.[dev]' }}
+      working-directory: ${{ vars.CI_FRONTEND_WORKDIR || 'frontend' }}
+
+  # ── Security ──────────────────────────────────────────────────────
+  secrets-scan:
+    name: Secrets
+    needs: [detect-stack]
+    uses: ./.github/workflows/python-gitleaks.yml
+    secrets:
+      GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  quality-gate:
+    name: Quality gate
+    if: always()
+    needs: [detect-stack, py-lint, py-build, py-test, fe-lint, fe-build, fe-unit, fe-e2e, secrets-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required job results
+        env:
+          PY_LINT: ${{ needs.py-lint.result }}
+          PY_BUILD: ${{ needs.py-build.result }}
+          PY_TEST: ${{ needs.py-test.result }}
+          FE_LINT: ${{ needs.fe-lint.result }}
+          FE_BUILD: ${{ needs.fe-build.result }}
+          FE_UNIT: ${{ needs.fe-unit.result }}
+          FE_E2E: ${{ needs.fe-e2e.result }}
+          SECRETS_SCAN: ${{ needs.secrets-scan.result }}
+        run: |
+          results=("$PY_LINT" "$PY_BUILD" "$PY_TEST" "$FE_LINT" "$FE_BUILD" "$FE_UNIT" "$FE_E2E" "$SECRETS_SCAN")
+          for result in "${results[@]}"; do
+            if [ "$result" = "failure" ] || [ "$result" = "cancelled" ]; then
+              exit 1
+            fi
+          done
+
+  docker-build:
+    name: Docker Build
+    if: github.event_name == 'pull_request' && needs.detect-stack.outputs.has-docker == 'true'
+    needs: [detect-stack, quality-gate]
+    uses: ./.github/workflows/build-and-push.yml
+    with:
+      push-image: false
+    permissions:
+      contents: read
+
+  docker-push:
+    name: Docker Push
+    if: |
+      needs.detect-stack.outputs.has-docker == 'true' &&
+      github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    needs: [detect-stack, quality-gate]
+    uses: ./.github/workflows/build-and-push.yml
+    with:
+      push-image: true
+    permissions:
+      contents: read
+      packages: write
+
+  trigger-staging-deploy:
+    name: Trigger Staging Deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.docker-push.result == 'success'
+    needs: [detect-stack, quality-gate, docker-push]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Trigger Woodpecker pipeline
+        env:
+          WOODPECKER_SERVER: ${{ secrets.WOODPECKER_SERVER }}
+          WOODPECKER_TOKEN: ${{ secrets.WOODPECKER_TOKEN }}
+          WOODPECKER_REPO: ${{ secrets.WOODPECKER_REPO }}
+          WOODPECKER_REPO_ID: ${{ secrets.WOODPECKER_REPO_ID }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          set -eu
+
+          if [ -z "${WOODPECKER_SERVER:-}" ] || [ -z "${WOODPECKER_TOKEN:-}" ]; then
+            echo "Skipping trigger: WOODPECKER_SERVER or WOODPECKER_TOKEN is not set."
+            exit 0
+          fi
+
+          server="${WOODPECKER_SERVER%/}"
+          repo_full="${WOODPECKER_REPO:-$GITHUB_REPOSITORY}"
+          repo_full_lc="$(printf '%s' "$repo_full" | tr '[:upper:]' '[:lower:]')"
+          api_base=""
+          repo_id="${WOODPECKER_REPO_ID:-}"
+
+          if [ -z "$repo_id" ]; then
+            for base in "$server" "$server/api"; do
+              for candidate in "$repo_full" "$repo_full_lc"; do
+                repo_json="$(REPO_FULL="$candidate" python3 -c 'import os,urllib.parse; print(urllib.parse.quote(os.environ["REPO_FULL"], safe=""))')"
+                lookup_response="$(curl -sS --retry 3 --retry-delay 2 \
+                  -H "Authorization: Bearer $WOODPECKER_TOKEN" \
+                  -H "Accept: application/json" \
+                  -w '\n%{http_code}' \
+                  "$base/repos/lookup/$repo_json")"
+
+                lookup_body="$(printf '%s' "$lookup_response" | sed '$d')"
+                lookup_status="$(printf '%s' "$lookup_response" | tail -n1)"
+
+                if [ "$lookup_status" = "200" ] && [ -n "$lookup_body" ]; then
+                  found_repo_id="$(RESPONSE="$lookup_body" python3 -c 'import json,os; raw=os.environ["RESPONSE"].strip(); print((json.loads(raw).get("id", "") if raw else "")) if (raw and raw[:1] in "[{\"") else print("")')"
+                  if [ -n "$found_repo_id" ]; then
+                    repo_id="$found_repo_id"
+                    api_base="$base"
+                    break
+                  fi
+                fi
+              done
+
+              if [ -n "$repo_id" ]; then
+                break
+              fi
+            done
+          fi
+
+          if [ -z "$repo_id" ]; then
+            echo "Failed to resolve Woodpecker repo id for '$repo_full'."
+            echo "Set WOODPECKER_REPO (owner/repo) and optionally WOODPECKER_REPO_ID to bypass lookup."
+            exit 1
+          fi
+
+          if [ -z "$api_base" ]; then
+            if curl -sS -o /dev/null -H "Authorization: Bearer $WOODPECKER_TOKEN" "$server/api/version"; then
+              api_base="$server/api"
+            else
+              api_base="$server"
+            fi
+          fi
+
+          payload="$(GITHUB_SHA="$GITHUB_SHA" python3 -c 'import json,os; print(json.dumps({"branch":"main","variables":{"IMAGE_TAG":"staging","SOURCE_COMMIT_SHA":os.environ["GITHUB_SHA"]}}))')"
+
+          trigger_file="$(mktemp)"
+          trigger_status="$(curl -sS --retry 3 --retry-delay 2 \
+            -X POST \
+            -H "Authorization: Bearer $WOODPECKER_TOKEN" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -d "$payload" \
+            -o "$trigger_file" \
+            -w '%{http_code}' \
+            "$api_base/repos/$repo_id/pipelines")"
+
+          trigger_response="$(cat "$trigger_file")"
+          rm -f "$trigger_file"
+
+          case "$trigger_status" in
+            2*) ;;
+            *)
+              echo "Woodpecker trigger failed with HTTP $trigger_status"
+              if [ -n "$trigger_response" ]; then
+                echo "$trigger_response"
+              fi
+              exit 1
+              ;;
+          esac
+
+          pipeline_number="$(RESPONSE="$trigger_response" python3 -c 'import json,os; raw=os.environ["RESPONSE"].strip(); print(json.loads(raw).get("number", "") if (raw and raw[:1] in "[{\"") else "")')"
+
+          echo "Triggered Woodpecker staging pipeline ${pipeline_number} for ${repo_full}"
+
+  # ── Release ───────────────────────────────────────────────────────
+  release:
+    name: Release
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && (needs.docker-push.result == 'success' || needs.docker-push.result == 'skipped')
+    needs: [detect-stack, quality-gate, docker-push]
+    uses: ./.github/workflows/python-release.yml
+    permissions:
+      contents: write
+
+  trigger-production-deploy:
+    name: Trigger Production Deploy
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && needs.docker-push.result == 'success'
+    needs: [detect-stack, quality-gate, docker-push]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Trigger Woodpecker pipeline
+        env:
+          WOODPECKER_SERVER: ${{ secrets.WOODPECKER_SERVER }}
+          WOODPECKER_TOKEN: ${{ secrets.WOODPECKER_TOKEN }}
+          WOODPECKER_REPO: ${{ secrets.WOODPECKER_REPO }}
+          WOODPECKER_REPO_ID: ${{ secrets.WOODPECKER_REPO_ID }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          IMAGE_TAG: ${{ github.ref_name }}
+        run: |
+          set -eu
+
+          # Strip leading 'v' to match semver Docker tags (v1.2.3 -> 1.2.3)
+          IMAGE_TAG="${IMAGE_TAG#v}"
+
+          if [ -z "${WOODPECKER_SERVER:-}" ] || [ -z "${WOODPECKER_TOKEN:-}" ]; then
+            echo "Skipping trigger: WOODPECKER_SERVER or WOODPECKER_TOKEN is not set."
+            exit 0
+          fi
+
+          server="${WOODPECKER_SERVER%/}"
+          repo_full="${WOODPECKER_REPO:-$GITHUB_REPOSITORY}"
+          repo_full_lc="$(printf '%s' "$repo_full" | tr '[:upper:]' '[:lower:]')"
+          api_base=""
+          repo_id="${WOODPECKER_REPO_ID:-}"
+
+          if [ -z "$repo_id" ]; then
+            for base in "$server" "$server/api"; do
+              for candidate in "$repo_full" "$repo_full_lc"; do
+                repo_json="$(REPO_FULL="$candidate" python3 -c 'import os,urllib.parse; print(urllib.parse.quote(os.environ["REPO_FULL"], safe=""))')"
+                lookup_response="$(curl -sS --retry 3 --retry-delay 2 \
+                  -H "Authorization: Bearer $WOODPECKER_TOKEN" \
+                  -H "Accept: application/json" \
+                  -w '\n%{http_code}' \
+                  "$base/repos/lookup/$repo_json")"
+
+                lookup_body="$(printf '%s' "$lookup_response" | sed '$d')"
+                lookup_status="$(printf '%s' "$lookup_response" | tail -n1)"
+
+                if [ "$lookup_status" = "200" ] && [ -n "$lookup_body" ]; then
+                  found_repo_id="$(RESPONSE="$lookup_body" python3 -c 'import json,os; raw=os.environ["RESPONSE"].strip(); print((json.loads(raw).get("id", "") if raw else "")) if (raw and raw[:1] in "[{\"") else print("")')"
+                  if [ -n "$found_repo_id" ]; then
+                    repo_id="$found_repo_id"
+                    api_base="$base"
+                    break
+                  fi
+                fi
+              done
+
+              if [ -n "$repo_id" ]; then
+                break
+              fi
+            done
+          fi
+
+          if [ -z "$repo_id" ]; then
+            echo "Failed to resolve Woodpecker repo id for '$repo_full'."
+            echo "Set WOODPECKER_REPO (owner/repo) and optionally WOODPECKER_REPO_ID to bypass lookup."
+            exit 1
+          fi
+
+          if [ -z "$api_base" ]; then
+            if curl -sS -o /dev/null -H "Authorization: Bearer $WOODPECKER_TOKEN" "$server/api/version"; then
+              api_base="$server/api"
+            else
+              api_base="$server"
+            fi
+          fi
+
+          payload="$(IMAGE_TAG="$IMAGE_TAG" python3 -c 'import json,os; print(json.dumps({"branch":"main","variables":{"IMAGE_TAG":os.environ["IMAGE_TAG"]}}))')"
+
+          trigger_file="$(mktemp)"
+          trigger_status="$(curl -sS --retry 3 --retry-delay 2 \
+            -X POST \
+            -H "Authorization: Bearer $WOODPECKER_TOKEN" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -d "$payload" \
+            -o "$trigger_file" \
+            -w '%{http_code}' \
+            "$api_base/repos/$repo_id/pipelines")"
+
+          trigger_response="$(cat "$trigger_file")"
+          rm -f "$trigger_file"
+
+          case "$trigger_status" in
+            2*) ;;
+            *)
+              echo "Woodpecker trigger failed with HTTP $trigger_status"
+              if [ -n "$trigger_response" ]; then
+                echo "$trigger_response"
+              fi
+              exit 1
+              ;;
+          esac
+
+          pipeline_number="$(RESPONSE="$trigger_response" python3 -c 'import json,os; raw=os.environ["RESPONSE"].strip(); print(json.loads(raw).get("number", "") if (raw and raw[:1] in "[{\"") else "")')"
+
+          echo "Triggered Woodpecker production pipeline ${pipeline_number} for ${repo_full} with IMAGE_TAG=${IMAGE_TAG}"
