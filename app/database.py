@@ -26,7 +26,7 @@ def _build_database_url() -> str:
     # Fallback: SQLite via aiosqlite (local dev / docker-compose)
     db_path = Path(
         os.environ.get(
-            "DATABASE_PATH", Path(__file__).resolve().parent.parent / "dictionary.db"
+            "DATABASE_PATH", Path(__file__).resolve().parent.parent / "app.db"
         )
     )
     return f"sqlite+aiosqlite:///{db_path}"

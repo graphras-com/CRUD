@@ -13,7 +13,7 @@ export default function Backup() {
     setStats(null);
     try {
       const data = await getBackup();
-      setStats({ categories: data.categories.length, terms: data.terms.length });
+      setStats({ groups: data.groups.length, items: data.items.length });
 
       const blob = new Blob([JSON.stringify(data, null, 2)], {
         type: "application/json",
@@ -22,7 +22,7 @@ export default function Backup() {
       const a = document.createElement("a");
       a.href = url;
       const ts = new Date().toISOString().replace(/[:.]/g, "-");
-      a.download = `glossary-backup-${ts}.json`;
+      a.download = `backup-${ts}.json`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -41,8 +41,7 @@ export default function Backup() {
       </div>
 
       <p>
-        Download a complete backup of all categories, terms, and definitions as
-        a single JSON file.
+        Download a complete backup of all data as a single JSON file.
       </p>
 
       {error && <ErrorMessage message={error} />}
@@ -61,8 +60,8 @@ export default function Backup() {
         <div className="card" style={{ marginTop: 20 }}>
           <div className="card-body">
             <p>
-              <strong>Backup downloaded</strong> &mdash; {stats.categories}{" "}
-              categories, {stats.terms} terms.
+              <strong>Backup downloaded</strong> &mdash; {stats.groups}{" "}
+              groups, {stats.items} items.
             </p>
           </div>
         </div>

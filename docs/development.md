@@ -98,10 +98,8 @@ frontend/src/
   config/resources.js     Resource registry (single source of truth)
   api/client.js           Generic API client (auto-generates CRUD functions)
   components/             Generic CRUD components (CrudList, CrudCreate, CrudEdit, CrudDetail)
-  pages/                  Page components (some override generic pages)
-  hooks/                  Custom React hooks
+  pages/                  Page components (can override generic pages)
   auth/                   MSAL authentication
-  pdf/                    Client-side PDF generation
 ```
 
 ### Page Overrides
@@ -110,9 +108,9 @@ Custom page components can override the generic CRUD pages. Overrides are regist
 
 ```js
 const pageOverrides = {
-  terms: {
-    list: TermListPage,
-    create: TermCreatePage,
+  items: {
+    list: ItemListPage,
+    create: ItemCreatePage,
   },
 };
 ```
@@ -121,7 +119,7 @@ When a resource has an override, the custom component is rendered instead of the
 
 ### API Client
 
-`frontend/src/api/client.js` auto-generates CRUD functions from the resource config. It also exports named functions for backward compatibility. When adding a new resource, the generic client automatically generates `fetchCategories`, `createCategory`, etc. based on the resource name.
+`frontend/src/api/client.js` auto-generates CRUD functions from the resource config. It also exports named functions for backward compatibility. When adding a new resource, the generic client automatically generates `fetchGroups`, `createGroup`, etc. based on the resource name.
 
 ---
 
@@ -291,7 +289,7 @@ SQLite deployments use `create_all` on startup and don't need migrations.
 
 ### 8. Seed Data (Optional)
 
-If the new entity should ship with seed data, add it to `base_data_import/glossary-seed.json`. The key name must match the resource `name` in the config. Seeding is idempotent -- it only runs if the first resource's table is empty.
+If the new entity should ship with seed data, add it to `base_data_import/seed.json`. The key name must match the resource `name` in the config. Seeding is idempotent -- it only runs if the first resource's table is empty.
 
 ### 9. Tests
 
@@ -301,7 +299,7 @@ Add backend tests in `tests/test_examples.py` and frontend E2E tests in `fronten
 
 ## Adding Custom Endpoints
 
-For endpoints beyond generic CRUD (e.g. AI recommendations, text extraction):
+For endpoints beyond generic CRUD:
 
 1. Create a router in `resources/routers/`:
 
@@ -322,7 +320,7 @@ async def do_something():
 ```python
 def _load_custom_routers():
     from resources.routers import my_feature
-    return [recommend.router, extract_glossary.router, my_feature.router]
+    return [my_feature.router]
 ```
 
 Custom routers are standard FastAPI `APIRouter` instances. They are loaded lazily to avoid circular imports.
@@ -335,7 +333,7 @@ Key fields on `ResourceConfig` (defined in `app/crud/registry.py`):
 
 | Field                  | Type                  | Purpose                                                |
 |------------------------|-----------------------|--------------------------------------------------------|
-| `name`                 | `str`                 | URL prefix and API tag (e.g. `"categories"`)           |
+| `name`                 | `str`                 | URL prefix and API tag (e.g. `"groups"`)               |
 | `model`                | model class           | SQLAlchemy model                                       |
 | `create_schema`        | Pydantic class        | Request body for POST                                  |
 | `read_schema`          | Pydantic class        | Response body                                          |
@@ -363,7 +361,7 @@ Key fields in the `resources.js` resource objects:
 | `name`             | `string`   | Resource identifier (matches backend)              |
 | `label`            | `string`   | Plural display name                                |
 | `labelSingular`    | `string`   | Singular display name                              |
-| `apiPath`          | `string`   | API URL prefix (e.g. `"/categories"`)              |
+| `apiPath`          | `string`   | API URL prefix (e.g. `"/groups"`)                  |
 | `pkField`          | `string`   | Primary key field name                             |
 | `pkType`           | `string`   | `"number"` or `"string"`                           |
 | `navOrder`         | `number`   | Navigation bar ordering (lower = first)            |

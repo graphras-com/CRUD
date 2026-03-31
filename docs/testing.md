@@ -16,10 +16,10 @@ uv run pytest
 uv run pytest -v
 
 # Run a specific test file
-uv run pytest tests/test_categories.py
+uv run pytest tests/test_groups.py
 
 # Run a specific test
-uv run pytest tests/test_categories.py::test_create_category
+uv run pytest tests/test_groups.py::test_create_group_top_level
 
 # With coverage report
 uv run pytest --cov=app --cov=resources
@@ -75,19 +75,19 @@ _TEST_USER = TokenPayload(
     name="Test User",
     email="test@example.com",
     scopes=["access_as_user"],
-    roles=["Glossary.Admin"],
+    roles=["App.Admin"],
 )
 ```
 
 All tests run as an authenticated admin by default.
 
-#### `seed_categories`
+#### `seed_groups`
 
-Creates four categories (network, network.mobile, network.access, commercial) via the API and returns their response bodies.
+Creates four groups (engineering, engineering.backend, engineering.frontend, operations) via the API and returns their response bodies.
 
-#### `seed_term`
+#### `seed_item`
 
-Creates a term "LTE" with two definitions (depends on `seed_categories`) and returns its response body.
+Creates an item "Widget" with two details (depends on `seed_groups`) and returns its response body.
 
 ### Writing Backend Tests
 
@@ -117,7 +117,7 @@ async def test_create_duplicate_returns_409(client: AsyncClient):
 Key patterns:
 - No `@pytest.mark.asyncio` needed (auto mode)
 - Use the `client` fixture for HTTP-level tests
-- Use `seed_categories` / `seed_term` fixtures for tests that need pre-existing data
+- Use `seed_groups` / `seed_item` fixtures for tests that need pre-existing data
 - Tests are isolated: each test gets a fresh in-memory database
 
 ---
@@ -134,9 +134,6 @@ npm run test:unit
 
 # Watch mode
 npx vitest
-
-# Run a specific test file
-npx vitest run src/pdf/generateGlossaryPdf.test.js
 ```
 
 ### Configuration
@@ -159,9 +156,6 @@ Place test files next to the source file they test:
 
 ```
 src/
-  pdf/
-    generateGlossaryPdf.js
-    generateGlossaryPdf.test.js
   hooks/
     useSomeHook.js
     useSomeHook.test.js
@@ -195,7 +189,7 @@ npm test
 npm run test:headed
 
 # Run a specific test file
-npx playwright test e2e/categories.spec.js
+npx playwright test e2e/groups.spec.js
 
 # Debug mode (step through tests)
 npx playwright test --debug
@@ -255,16 +249,16 @@ E2E tests do **not** hit the real backend. The `helpers.js` file provides a `moc
 ```js
 import { mockApi } from "./helpers.js";
 
-test("should list categories", async ({ page }) => {
-  const { categories, terms } = await mockApi(page);
-  await page.goto("/categories");
+test("should list groups", async ({ page }) => {
+  const { groups, items } = await mockApi(page);
+  await page.goto("/groups");
   // ... assertions
 });
 ```
 
-`mockApi` returns mutable references to the mock data arrays (`categories` and `terms`), allowing tests to verify CRUD mutations.
+`mockApi` returns mutable references to the mock data arrays (`groups` and `items`), allowing tests to verify CRUD mutations.
 
-The mock covers all endpoints: categories CRUD, terms CRUD, definitions CRUD, recommend-definition, backup, and restore.
+The mock covers all endpoints: groups CRUD, items CRUD, details CRUD, backup, and restore.
 
 ### Test Files
 
@@ -272,13 +266,12 @@ The mock covers all endpoints: categories CRUD, terms CRUD, definitions CRUD, re
 frontend/e2e/
   helpers.js              Shared mock data and route-mocking helpers
   home.spec.js            Home page tests
-  categories.spec.js      Category CRUD tests
-  terms.spec.js           Term CRUD tests
-  definitions.spec.js     Definition CRUD tests
+  groups.spec.js          Group CRUD tests
+  items.spec.js           Item CRUD tests
+  details.spec.js         Detail CRUD tests
   search.spec.js          Search and filter tests
   backup.spec.js          Backup download tests
   restore.spec.js         Restore upload tests
-  pdf.spec.js             PDF generation tests
 ```
 
 ### Writing E2E Tests
@@ -301,7 +294,7 @@ test.describe("Examples", () => {
 
 Key patterns:
 - Always call `mockApi(page)` before navigating
-- The mock intercepts requests matching `localhost:(5173|8000)/(categories|terms|backup|health)` -- update the regex pattern in `helpers.js` if adding new resource paths
+- The mock intercepts requests matching `localhost:(5173|8000)/(groups|items|backup|health)` -- update the regex pattern in `helpers.js` if adding new resource paths
 - HTML page navigations (with `Accept: text/html`) pass through to the Vite dev server
 
 ---

@@ -65,7 +65,7 @@ def _make_token(
         "oid": "oid-123",
         "tid": TEST_TENANT,
         "scp": "access_as_user",
-        "roles": ["Glossary.Reader"],
+        "roles": ["App.Reader"],
         "aud": TEST_AUDIENCE,
         "iss": TEST_ISSUER,
         "iat": now - 60,
@@ -172,15 +172,15 @@ async def test_health_no_auth_required(unauthenticated_client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_categories_no_token_401(unauthenticated_client: AsyncClient):
-    r = await unauthenticated_client.get("/categories/")
+async def test_groups_no_token_401(unauthenticated_client: AsyncClient):
+    r = await unauthenticated_client.get("/groups/")
     assert r.status_code == 401
     assert "Missing authentication token" in r.json()["detail"]
 
 
 @pytest.mark.asyncio
-async def test_terms_no_token_401(unauthenticated_client: AsyncClient):
-    r = await unauthenticated_client.get("/terms/")
+async def test_items_no_token_401(unauthenticated_client: AsyncClient):
+    r = await unauthenticated_client.get("/items/")
     assert r.status_code == 401
 
 
@@ -193,7 +193,7 @@ async def test_backup_no_token_401(unauthenticated_client: AsyncClient):
 @pytest.mark.asyncio
 async def test_post_no_token_401(unauthenticated_client: AsyncClient):
     r = await unauthenticated_client.post(
-        "/categories/", json={"id": "test", "label": "Test"}
+        "/groups/", json={"id": "test", "label": "Test"}
     )
     assert r.status_code == 401
 
@@ -208,7 +208,7 @@ async def test_post_no_token_401(unauthenticated_client: AsyncClient):
 async def test_expired_token_401(unauthenticated_client: AsyncClient):
     token = _make_token(expired=True)
     r = await unauthenticated_client.get(
-        "/categories/",
+        "/groups/",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 401
@@ -220,7 +220,7 @@ async def test_expired_token_401(unauthenticated_client: AsyncClient):
 async def test_wrong_audience_401(unauthenticated_client: AsyncClient):
     token = _make_token(wrong_audience=True)
     r = await unauthenticated_client.get(
-        "/categories/",
+        "/groups/",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 401
@@ -231,7 +231,7 @@ async def test_wrong_audience_401(unauthenticated_client: AsyncClient):
 async def test_wrong_issuer_401(unauthenticated_client: AsyncClient):
     token = _make_token(wrong_issuer=True)
     r = await unauthenticated_client.get(
-        "/categories/",
+        "/groups/",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 401
@@ -242,7 +242,7 @@ async def test_wrong_issuer_401(unauthenticated_client: AsyncClient):
 async def test_wrong_tenant_401(unauthenticated_client: AsyncClient):
     token = _make_token(wrong_tenant=True)
     r = await unauthenticated_client.get(
-        "/categories/",
+        "/groups/",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 401
@@ -251,7 +251,7 @@ async def test_wrong_tenant_401(unauthenticated_client: AsyncClient):
 @pytest.mark.asyncio
 async def test_malformed_token_401(unauthenticated_client: AsyncClient):
     r = await unauthenticated_client.get(
-        "/categories/",
+        "/groups/",
         headers={"Authorization": "Bearer not.a.valid.jwt"},
     )
     assert r.status_code == 401
@@ -260,7 +260,7 @@ async def test_malformed_token_401(unauthenticated_client: AsyncClient):
 @pytest.mark.asyncio
 async def test_empty_bearer_401(unauthenticated_client: AsyncClient):
     r = await unauthenticated_client.get(
-        "/categories/",
+        "/groups/",
         headers={"Authorization": "Bearer "},
     )
     assert r.status_code == 401
@@ -276,7 +276,7 @@ async def test_empty_bearer_401(unauthenticated_client: AsyncClient):
 async def test_valid_token_200(unauthenticated_client: AsyncClient):
     token = _make_token()
     r = await unauthenticated_client.get(
-        "/categories/",
+        "/groups/",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 200
@@ -284,10 +284,10 @@ async def test_valid_token_200(unauthenticated_client: AsyncClient):
 
 @pytest.mark.asyncio
 @patch("app.auth._jwks_cache", _mock_jwks_cache())
-async def test_valid_token_terms_200(unauthenticated_client: AsyncClient):
+async def test_valid_token_items_200(unauthenticated_client: AsyncClient):
     token = _make_token()
     r = await unauthenticated_client.get(
-        "/terms/",
+        "/items/",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert r.status_code == 200
@@ -374,10 +374,10 @@ async def test_require_role_passes():
         oid="oid",
         tid="tid",
         scopes=[],
-        roles=["Glossary.Admin"],
+        roles=["App.Admin"],
         raw={},
     )
-    checker = require_role("Glossary.Admin", "Glossary.Editor")
+    checker = require_role("App.Admin", "App.Editor")
     result = await checker(token)
     assert result.sub == "u1"
 
@@ -394,10 +394,10 @@ async def test_require_role_fails():
         oid="oid",
         tid="tid",
         scopes=[],
-        roles=["Glossary.Reader"],
+        roles=["App.Reader"],
         raw={},
     )
-    checker = require_role("Glossary.Admin")
+    checker = require_role("App.Admin")
     with pytest.raises(HTTPException) as exc_info:
         await checker(token)
     assert exc_info.value.status_code == 403
@@ -405,19 +405,19 @@ async def test_require_role_fails():
 
 
 # =========================================================================
-# Restore endpoint requires Glossary.Admin role
+# Restore endpoint requires App.Admin role
 # =========================================================================
 
 
 @pytest.mark.asyncio
 @patch("app.auth._jwks_cache", _mock_jwks_cache())
 async def test_restore_requires_admin_role(unauthenticated_client: AsyncClient):
-    """POST /backup/restore should require the Glossary.Admin role."""
-    token = _make_token(claims={"roles": ["Glossary.Reader"]})
+    """POST /backup/restore should require the App.Admin role."""
+    token = _make_token(claims={"roles": ["App.Reader"]})
     r = await unauthenticated_client.post(
         "/backup/restore",
         headers={"Authorization": f"Bearer {token}"},
-        json={"version": 1, "categories": [], "terms": []},
+        json={"version": 1, "groups": [], "items": []},
     )
     assert r.status_code == 403
     assert "Insufficient role" in r.json()["detail"]
@@ -426,12 +426,12 @@ async def test_restore_requires_admin_role(unauthenticated_client: AsyncClient):
 @pytest.mark.asyncio
 @patch("app.auth._jwks_cache", _mock_jwks_cache())
 async def test_restore_admin_allowed(unauthenticated_client: AsyncClient):
-    """POST /backup/restore should succeed for Glossary.Admin."""
-    token = _make_token(claims={"roles": ["Glossary.Admin"]})
+    """POST /backup/restore should succeed for App.Admin."""
+    token = _make_token(claims={"roles": ["App.Admin"]})
     r = await unauthenticated_client.post(
         "/backup/restore",
         headers={"Authorization": f"Bearer {token}"},
-        json={"version": 1, "categories": [], "terms": []},
+        json={"version": 1, "groups": [], "items": []},
     )
     assert r.status_code == 200
 
@@ -460,7 +460,7 @@ async def test_auth_disabled_mode(engine):
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        r = await ac.get("/categories/")
+        r = await ac.get("/groups/")
         assert r.status_code == 200
 
     auth_settings.auth_disabled = original_disabled
@@ -513,7 +513,7 @@ async def test_validate_token_extracts_claims():
             "name": "Jane Doe",
             "preferred_username": "jane@company.com",
             "scp": "access_as_user read",
-            "roles": ["Glossary.Admin", "Glossary.Reader"],
+            "roles": ["App.Admin", "App.Reader"],
         }
     )
     result = await _validate_token(token)
@@ -523,7 +523,7 @@ async def test_validate_token_extracts_claims():
     assert result.tid == TEST_TENANT
     assert "access_as_user" in result.scopes
     assert "read" in result.scopes
-    assert "Glossary.Admin" in result.roles
+    assert "App.Admin" in result.roles
 
     auth_settings.tenant_id = original_tenant
     auth_settings.api_audience = original_audience

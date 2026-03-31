@@ -9,82 +9,82 @@
  * tests can inspect / mutate state when verifying CRUD behaviour.
  */
 
-export const CATEGORIES = [
-  { id: "commercial", parent_id: null, label: "Commercial" },
-  { id: "commercial.retail", parent_id: "commercial", label: "Retail" },
-  { id: "network", parent_id: null, label: "Network" },
-  { id: "network.mobile", parent_id: "network", label: "Mobile" },
-  { id: "transmission", parent_id: null, label: "Transmission" },
+export const GROUPS = [
+  { id: "engineering", parent_id: null, label: "Engineering" },
+  { id: "engineering.backend", parent_id: "engineering", label: "Backend" },
+  { id: "design", parent_id: null, label: "Design" },
+  { id: "design.ux", parent_id: "design", label: "UX" },
+  { id: "operations", parent_id: null, label: "Operations" },
   {
-    id: "transmission.submarine_cable",
-    parent_id: "transmission",
-    label: "Submarine Cable",
+    id: "operations.infrastructure",
+    parent_id: "operations",
+    label: "Infrastructure",
   },
 ];
 
-export const TERMS = [
+export const ITEMS = [
   {
     id: 1,
-    term: "Bandwidth",
-    definitions: [
+    name: "Widget",
+    details: [
       {
         id: 10,
-        en: "The maximum rate of data transfer across a given path.",
-        da: "Den maksimale dataoverførselshastighed.",
-        category_id: "network",
+        description: "A reusable UI component for dashboards.",
+        notes: "Used in version 2.0 and later.",
+        group_id: "design",
       },
     ],
   },
   {
     id: 2,
-    term: "Latency",
-    definitions: [
+    name: "Pipeline",
+    details: [
       {
         id: 20,
-        en: "The delay before a transfer of data begins following an instruction.",
-        da: null,
-        category_id: "network.mobile",
+        description: "An automated sequence of build and deploy steps.",
+        notes: null,
+        group_id: "engineering.backend",
       },
       {
         id: 21,
-        en: "Round-trip time for a packet.",
-        da: "Rundturstid for en pakke.",
-        category_id: "transmission",
+        description: "A data processing pipeline for ETL workflows.",
+        notes: "Runs nightly via cron job.",
+        group_id: "operations",
       },
     ],
   },
   {
     id: 3,
-    term: "Churn",
-    definitions: [
+    name: "Sprint",
+    details: [
       {
         id: 30,
-        en: "The rate at which subscribers leave a service.",
-        da: null,
-        category_id: "commercial.retail",
+        description: "A fixed time period for completing a set of tasks.",
+        notes: null,
+        group_id: "engineering.backend",
       },
     ],
   },
 ];
 
-let nextTermId = 100;
-let nextDefId = 1000;
+let nextItemId = 100;
+let nextDetailId = 1000;
 
 /**
  * Intercept all backend API calls and respond with mock data.
- * Returns `{ categories, terms }` so tests can inspect state.
+ * Returns `{ groups, items }` so tests can inspect state.
  */
 export async function mockApi(page) {
-  const categories = structuredClone(CATEGORIES);
-  const terms = structuredClone(TERMS);
-  nextTermId = 100;
-  nextDefId = 1000;
+  const groups = structuredClone(GROUPS);
+  const items = structuredClone(ITEMS);
+  nextItemId = 100;
+  nextDetailId = 1000;
 
   // ── Catch-all for API requests ──
   // Matches requests to the Vite dev server (localhost:5173) for API paths,
   // or direct requests to the backend (localhost:8000).
   // We check the Accept header to avoid intercepting HTML page navigations.
-  await page.route(/localhost:(5173|8000)\/(categories|terms|backup|health)/, async (route) => {
+  await page.route(/localhost:(5173|8000)\/(groups|items|backup|health)/, async (route) => {
     // Let page navigations (HTML requests) pass through to Vite dev server
     const accept = route.request().headers()["accept"] || "";
     if (accept.includes("text/html")) {
@@ -96,29 +96,29 @@ export async function mockApi(page) {
     const parsed = new URL(url);
     const pathname = parsed.pathname.replace(/\/$/, ""); // normalize: strip trailing slash
 
-    // ── Categories list: /categories ──
-    if (pathname === "/categories") {
+    // ── Groups list: /groups ──
+    if (pathname === "/groups") {
       if (method === "GET") {
-        return route.fulfill({ json: categories });
+        return route.fulfill({ json: groups });
       }
       if (method === "POST") {
         const body = route.request().postDataJSON();
-        const cat = {
+        const grp = {
           id: body.id,
           parent_id: body.parent_id || null,
           label: body.label,
         };
-        categories.push(cat);
-        return route.fulfill({ status: 201, json: cat });
+        groups.push(grp);
+        return route.fulfill({ status: 201, json: grp });
       }
       return route.fallback();
     }
 
-    // ── Category detail: /categories/{id} ──
-    const catDetailMatch = pathname.match(/^\/categories\/(.+)$/);
-    if (catDetailMatch) {
-      const id = decodeURIComponent(catDetailMatch[1]);
-      const idx = categories.findIndex((c) => c.id === id);
+    // ── Group detail: /groups/{id} ──
+    const groupDetailMatch = pathname.match(/^\/groups\/(.+)$/);
+    if (groupDetailMatch) {
+      const id = decodeURIComponent(groupDetailMatch[1]);
+      const idx = groups.findIndex((g) => g.id === id);
 
       if (method === "GET") {
         if (idx === -1)
@@ -126,7 +126,7 @@ export async function mockApi(page) {
             status: 404,
             json: { detail: "Not found" },
           });
-        return route.fulfill({ json: categories[idx] });
+        return route.fulfill({ json: groups[idx] });
       }
       if (method === "PATCH") {
         if (idx === -1)
@@ -135,10 +135,10 @@ export async function mockApi(page) {
             json: { detail: "Not found" },
           });
         const body = route.request().postDataJSON();
-        if (body.label !== undefined) categories[idx].label = body.label;
+        if (body.label !== undefined) groups[idx].label = body.label;
         if (body.parent_id !== undefined)
-          categories[idx].parent_id = body.parent_id;
-        return route.fulfill({ json: categories[idx] });
+          groups[idx].parent_id = body.parent_id;
+        return route.fulfill({ json: groups[idx] });
       }
       if (method === "DELETE") {
         if (idx === -1)
@@ -146,159 +146,145 @@ export async function mockApi(page) {
             status: 404,
             json: { detail: "Not found" },
           });
-        categories.splice(idx, 1);
+        groups.splice(idx, 1);
         return route.fulfill({ status: 204, body: "" });
       }
       return route.fallback();
     }
 
-    // ── Terms list: /terms ──
-    if (pathname === "/terms") {
+    // ── Items list: /items ──
+    if (pathname === "/items") {
       if (method === "GET") {
         const q = parsed.searchParams.get("q")?.toLowerCase();
-        const cat = parsed.searchParams.get("category");
-        let result = terms;
+        const grp = parsed.searchParams.get("group");
+        let result = items;
         if (q)
-          result = result.filter((t) => t.term.toLowerCase().includes(q));
-        if (cat)
-          result = result.filter((t) =>
-            t.definitions.some((d) => d.category_id === cat)
+          result = result.filter((i) => i.name.toLowerCase().includes(q));
+        if (grp)
+          result = result.filter((i) =>
+            i.details.some((d) => d.group_id === grp)
           );
         return route.fulfill({ json: result });
       }
       if (method === "POST") {
         const body = route.request().postDataJSON();
-        const term = {
-          id: ++nextTermId,
-          term: body.term,
-          definitions: body.definitions.map((d) => ({
-            id: ++nextDefId,
-            en: d.en,
-            da: d.da || null,
-            category_id: d.category_id,
+        const item = {
+          id: ++nextItemId,
+          name: body.name,
+          details: body.details.map((d) => ({
+            id: ++nextDetailId,
+            description: d.description,
+            notes: d.notes || null,
+            group_id: d.group_id,
           })),
         };
-        terms.push(term);
-        return route.fulfill({ status: 201, json: term });
+        items.push(item);
+        return route.fulfill({ status: 201, json: item });
       }
       return route.fallback();
     }
 
-    if (pathname === "/terms/recommend-definition") {
-      if (method === "POST") {
-        const body = route.request().postDataJSON();
-        return route.fulfill({
-          json: {
-            en: `A concise definition for ${body.term}.`,
-            da: `En kort definition af ${body.term}.`,
-            model: "gpt-4.1-mini",
-          },
-        });
-      }
-      return route.fallback();
-    }
-
-    // ── Term definitions: /terms/{id}/definitions or /terms/{id}/definitions/{defId} ──
-    const defDetailMatch = pathname.match(
-      /^\/terms\/(\d+)\/definitions\/(\d+)$/
+    // ── Item details: /items/{id}/details or /items/{id}/details/{detailId} ──
+    const detailDetailMatch = pathname.match(
+      /^\/items\/(\d+)\/details\/(\d+)$/
     );
-    if (defDetailMatch) {
-      const termId = Number(defDetailMatch[1]);
-      const defId = Number(defDetailMatch[2]);
-      const term = terms.find((t) => t.id === termId);
+    if (detailDetailMatch) {
+      const itemId = Number(detailDetailMatch[1]);
+      const detailId = Number(detailDetailMatch[2]);
+      const item = items.find((i) => i.id === itemId);
 
       if (method === "PATCH") {
-        if (!term)
+        if (!item)
           return route.fulfill({
             status: 404,
             json: { detail: "Not found" },
           });
-        const def = term.definitions.find((d) => d.id === defId);
-        if (!def)
+        const det = item.details.find((d) => d.id === detailId);
+        if (!det)
           return route.fulfill({
             status: 404,
             json: { detail: "Not found" },
           });
         const body = route.request().postDataJSON();
-        if (body.en !== undefined) def.en = body.en;
-        if (body.da !== undefined) def.da = body.da;
-        if (body.category_id !== undefined) def.category_id = body.category_id;
-        return route.fulfill({ json: def });
+        if (body.description !== undefined) det.description = body.description;
+        if (body.notes !== undefined) det.notes = body.notes;
+        if (body.group_id !== undefined) det.group_id = body.group_id;
+        return route.fulfill({ json: det });
       }
       if (method === "DELETE") {
-        if (!term)
+        if (!item)
           return route.fulfill({
             status: 404,
             json: { detail: "Not found" },
           });
-        const idx = term.definitions.findIndex((d) => d.id === defId);
+        const idx = item.details.findIndex((d) => d.id === detailId);
         if (idx === -1)
           return route.fulfill({
             status: 404,
             json: { detail: "Not found" },
           });
-        term.definitions.splice(idx, 1);
+        item.details.splice(idx, 1);
         return route.fulfill({ status: 204, body: "" });
       }
       return route.fallback();
     }
 
-    const defListMatch = pathname.match(/^\/terms\/(\d+)\/definitions$/);
-    if (defListMatch) {
-      const termId = Number(defListMatch[1]);
-      const term = terms.find((t) => t.id === termId);
+    const detailListMatch = pathname.match(/^\/items\/(\d+)\/details$/);
+    if (detailListMatch) {
+      const itemId = Number(detailListMatch[1]);
+      const item = items.find((i) => i.id === itemId);
 
       if (method === "POST") {
-        if (!term)
+        if (!item)
           return route.fulfill({
             status: 404,
             json: { detail: "Not found" },
           });
         const body = route.request().postDataJSON();
-        const def = {
-          id: ++nextDefId,
-          en: body.en,
-          da: body.da || null,
-          category_id: body.category_id,
+        const det = {
+          id: ++nextDetailId,
+          description: body.description,
+          notes: body.notes || null,
+          group_id: body.group_id,
         };
-        term.definitions.push(def);
-        return route.fulfill({ status: 201, json: def });
+        item.details.push(det);
+        return route.fulfill({ status: 201, json: det });
       }
       return route.fallback();
     }
 
-    // ── Term detail: /terms/{id} ──
-    const termDetailMatch = pathname.match(/^\/terms\/(\d+)$/);
-    if (termDetailMatch) {
-      const termId = Number(termDetailMatch[1]);
-      const term = terms.find((t) => t.id === termId);
+    // ── Item detail: /items/{id} ──
+    const itemDetailMatch = pathname.match(/^\/items\/(\d+)$/);
+    if (itemDetailMatch) {
+      const itemId = Number(itemDetailMatch[1]);
+      const item = items.find((i) => i.id === itemId);
 
       if (method === "GET") {
-        if (!term)
+        if (!item)
           return route.fulfill({
             status: 404,
             json: { detail: "Not found" },
           });
-        return route.fulfill({ json: term });
+        return route.fulfill({ json: item });
       }
       if (method === "PATCH") {
-        if (!term)
+        if (!item)
           return route.fulfill({
             status: 404,
             json: { detail: "Not found" },
           });
         const body = route.request().postDataJSON();
-        if (body.term !== undefined) term.term = body.term;
-        return route.fulfill({ json: term });
+        if (body.name !== undefined) item.name = body.name;
+        return route.fulfill({ json: item });
       }
       if (method === "DELETE") {
-        const idx = terms.findIndex((t) => t.id === termId);
+        const idx = items.findIndex((i) => i.id === itemId);
         if (idx === -1)
           return route.fulfill({
             status: 404,
             json: { detail: "Not found" },
           });
-        terms.splice(idx, 1);
+        items.splice(idx, 1);
         return route.fulfill({ status: 204, body: "" });
       }
       return route.fallback();
@@ -310,17 +296,17 @@ export async function mockApi(page) {
         return route.fulfill({
           json: {
             version: 1,
-            categories: categories.map((c) => ({
-              id: c.id,
-              parent_id: c.parent_id,
-              label: c.label,
+            groups: groups.map((g) => ({
+              id: g.id,
+              parent_id: g.parent_id,
+              label: g.label,
             })),
-            terms: terms.map((t) => ({
-              term: t.term,
-              definitions: t.definitions.map((d) => ({
-                en: d.en,
-                da: d.da,
-                category_id: d.category_id,
+            items: items.map((i) => ({
+              name: i.name,
+              details: i.details.map((d) => ({
+                description: d.description,
+                notes: d.notes,
+                group_id: d.group_id,
               })),
             })),
           },
@@ -334,19 +320,19 @@ export async function mockApi(page) {
       if (method === "POST") {
         const body = route.request().postDataJSON();
         // Replace mock data
-        categories.length = 0;
-        if (body.categories) body.categories.forEach((c) => categories.push(c));
-        terms.length = 0;
-        if (body.terms) {
-          body.terms.forEach((t, i) => {
-            terms.push({
-              id: i + 1,
-              term: t.term,
-              definitions: (t.definitions || []).map((d, j) => ({
-                id: (i + 1) * 100 + j,
-                en: d.en,
-                da: d.da || null,
-                category_id: d.category_id,
+        groups.length = 0;
+        if (body.groups) body.groups.forEach((g) => groups.push(g));
+        items.length = 0;
+        if (body.items) {
+          body.items.forEach((i, idx) => {
+            items.push({
+              id: idx + 1,
+              name: i.name,
+              details: (i.details || []).map((d, j) => ({
+                id: (idx + 1) * 100 + j,
+                description: d.description,
+                notes: d.notes || null,
+                group_id: d.group_id,
               })),
             });
           });
@@ -354,8 +340,8 @@ export async function mockApi(page) {
         return route.fulfill({
           json: {
             status: "ok",
-            categories: categories.length,
-            terms: terms.length,
+            groups: groups.length,
+            items: items.length,
           },
         });
       }
@@ -366,5 +352,5 @@ export async function mockApi(page) {
     return route.fallback();
   });
 
-  return { categories, terms };
+  return { groups, items };
 }

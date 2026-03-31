@@ -210,7 +210,7 @@ __marimo__/
 .DS_Store
 
 # SQLite database (created on first run)
-dictionary.db
+app.db
 
 # Frontend build output (built at deploy time)
 frontend/dist/

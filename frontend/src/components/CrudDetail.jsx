@@ -13,12 +13,12 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import ConfirmButton from "./ConfirmButton";
 import ErrorMessage from "./ErrorMessage";
-import useCategoryMap from "../hooks/useCategoryMap";
+import useSelectSource from "../hooks/useSelectSource";
 
 export default function CrudDetail({ resource }) {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { breadcrumb: categoryBreadcrumb } = useCategoryMap();
+  const { breadcrumb } = useSelectSource();
   const [item, setItem] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -101,8 +101,8 @@ export default function CrudDetail({ resource }) {
         return (
           <p key={field.name}>
             <strong>{field.label}:</strong>{" "}
-            {field.type === "select" && field.source === "categories"
-              ? categoryBreadcrumb(val)
+            {field.type === "select" && field.source
+              ? breadcrumb(field.source, val)
               : val}
           </p>
         );
@@ -117,15 +117,15 @@ export default function CrudDetail({ resource }) {
             {childItems.length === 0 ? (
               <p className="empty">No {childCfg.label.toLowerCase()} yet.</p>
             ) : (
-              <div className="definitions-list">
+              <div className="children-list">
                 {childItems.map((child) => (
                   <div key={child.id} className="card">
                     <div className="card-header">
                       {childCfg.fields
-                        .filter((f) => f.type === "select" && f.source === "categories")
+                        .filter((f) => f.type === "select" && f.source)
                         .map((f) => (
                           <span key={f.name} className="badge">
-                            {child[f.name]}
+                            {breadcrumb(f.source, child[f.name])}
                           </span>
                         ))}
                       <div className="actions">

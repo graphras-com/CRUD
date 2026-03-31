@@ -1,19 +1,19 @@
 services:
-  glossary:
+  app:
     build:
       context: .
       args:
-        VITE_CLIENT_ID: 213d5d77-c055-4163-8e6a-56a666a924d2
-        VITE_TENANT_ID: 3a680226-db04-4df3-95bd-37b631e11597
-        VITE_API_SCOPE: api://d9785590-322c-48e6-ba58-a00aabb5aee5/access_as_user
+        VITE_CLIENT_ID: ""
+        VITE_TENANT_ID: ""
+        VITE_API_SCOPE: ""
     ports:
       - "5173:8000"
     volumes:
-      - glossary-data:/data
+      - app-data:/data
     env_file: .env
     environment:
-      - DATABASE_PATH=/data/dictionary.db
+      - DATABASE_PATH=/data/app.db
     restart: unless-stopped
 
 volumes:
-  glossary-data:
+  app-data:

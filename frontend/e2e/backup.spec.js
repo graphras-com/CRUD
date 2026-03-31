@@ -21,11 +21,11 @@ test.describe("Backup page", () => {
     const download = await downloadPromise;
 
     // Verify the file name pattern
-    expect(download.suggestedFilename()).toMatch(/^glossary-backup-.*\.json$/);
+    expect(download.suggestedFilename()).toMatch(/^backup-.*\.json$/);
 
     // Stats should now be visible
-    await expect(page.locator(".card-body")).toContainText("categories");
-    await expect(page.locator(".card-body")).toContainText("terms");
+    await expect(page.locator(".card-body")).toContainText("groups");
+    await expect(page.locator(".card-body")).toContainText("items");
   });
 
   test("shows error message when backup fails", async ({ page }) => {

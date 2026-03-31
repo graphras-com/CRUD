@@ -12,7 +12,7 @@
 
 ```bash
 git clone <repository-url>
-cd Glossary
+cd CRUD
 cp .env.example .env
 ```
 
@@ -20,7 +20,7 @@ Edit `.env` as needed. The defaults work for local development with auth disable
 
 ```env
 AUTH_DISABLED=true
-DATABASE_PATH=./dictionary.db
+DATABASE_PATH=./app.db
 ```
 
 ### 2. Start the Backend
@@ -33,7 +33,7 @@ uv sync
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
-On first launch, the SQLite database file (`dictionary.db`) is created automatically and seeded with 18 telecom categories and 165 terms from `base_data_import/glossary-seed.json`.
+On first launch, the SQLite database file (`app.db`) is created automatically and seeded with example data from `base_data_import/seed.json`.
 
 ### 3. Start the Frontend
 
@@ -43,7 +43,7 @@ npm install
 npm run dev
 ```
 
-The Vite dev server starts on <http://localhost:5173> and proxies API calls (`/categories`, `/terms`, `/backup`, `/health`) to `http://localhost:8000`.
+The Vite dev server starts on <http://localhost:5173> and proxies API calls (`/groups`, `/items`, `/backup`, `/health`) to `http://localhost:8000`.
 
 ### Docker Compose
 
@@ -53,7 +53,7 @@ For a containerized setup:
 docker compose up --build -d
 ```
 
-This builds a multi-stage Docker image (Node.js for the frontend, Python for the backend), and serves the app at <http://localhost:5173> (host port 5173 mapped to container port 8000). The SQLite database is persisted in a Docker named volume (`glossary-data`).
+This builds a multi-stage Docker image (Node.js for the frontend, Python for the backend), and serves the app at <http://localhost:5173> (host port 5173 mapped to container port 8000). The SQLite database is persisted in a Docker named volume (`app-data`).
 
 To use auth with Docker Compose, configure the build args in `docker-compose.yml` and set the appropriate environment variables in `.env`.
 
@@ -64,8 +64,8 @@ To use auth with Docker Compose, configure the build args in `docker-compose.yml
 curl http://localhost:8000/health
 # Should return: {"status":"ok"}
 
-# List categories (auth disabled)
-curl http://localhost:8000/categories/
+# List groups (auth disabled)
+curl http://localhost:8000/groups/
 ```
 
 ## IDE Setup

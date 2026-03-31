@@ -1,6 +1,6 @@
-# Glossary Frontend
+# CRUD Template Frontend
 
-React 19 SPA for the Telecom Glossary application. Uses a resource-driven architecture where CRUD pages are auto-generated from configuration.
+React 19 SPA for the CRUD template application. Uses a resource-driven architecture where CRUD pages are auto-generated from configuration.
 
 ## Development
 

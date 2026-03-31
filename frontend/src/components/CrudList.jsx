@@ -15,7 +15,7 @@ import { Link, useSearchParams, useLocation } from "react-router-dom";
 import { api } from "../api/client";
 import ConfirmButton from "./ConfirmButton";
 import ErrorMessage from "./ErrorMessage";
-import useCategoryMap from "../hooks/useCategoryMap";
+import useSelectSource from "../hooks/useSelectSource";
 
 export default function CrudList({ resource, extraActions }) {
   const [items, setItems] = useState([]);
@@ -23,7 +23,7 @@ export default function CrudList({ resource, extraActions }) {
   const [loading, setLoading] = useState(true);
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
-  const { categories, breadcrumb: categoryBreadcrumb } = useCategoryMap();
+  const { getItems: getSourceItems, breadcrumb } = useSelectSource();
 
   const q = searchParams.get("q") || "";
   const filterValues = {};
@@ -121,19 +121,19 @@ export default function CrudList({ resource, extraActions }) {
     (field, value) => {
       if (value == null) return <span className="muted">--</span>;
       if (field.render === "code") return <code>{value}</code>;
-      if (field.type === "select" && field.source === "categories") {
-        return categoryBreadcrumb(value);
+      if (field.type === "select" && field.source) {
+        return breadcrumb(field.source, value);
       }
       return value;
     },
-    [categoryBreadcrumb]
+    [breadcrumb]
   );
 
   /**
    * Get source items for a select-type filter.
    */
   function getFilterSourceItems(filter) {
-    if (filter.source === "categories") return categories;
+    if (filter.source) return getSourceItems(filter.source);
     return [];
   }
 
@@ -183,14 +183,14 @@ export default function CrudList({ resource, extraActions }) {
   function renderDetailCards() {
     const mainField = resource.fields.find((f) => f.showInList) || resource.fields[0];
     return (
-      <div className="glossary">
+      <div className="detail-cards">
         {items.map((item) => {
           const pk = item[resource.pkField];
           return (
-            <div key={pk} id={`item-${pk}`} className="glossary-entry">
-              <div className="glossary-term-row">
-                <h2 className="glossary-term">{item[mainField.name]}</h2>
-                <div className="glossary-term-actions">
+            <div key={pk} id={`item-${pk}`} className="detail-card-entry">
+              <div className="detail-card-header">
+                <h2 className="detail-card-title">{item[mainField.name]}</h2>
+                <div className="detail-card-actions">
                   <Link to={`/${resource.name}/${pk}/edit`} className="btn btn-sm">
                     Edit
                   </Link>
@@ -214,29 +214,29 @@ export default function CrudList({ resource, extraActions }) {
                 const childItems = item[childCfg.name] || [];
                 if (childItems.length === 0) {
                   return (
-                    <p key={childCfg.name} className="glossary-no-defs">
+                    <p key={childCfg.name} className="detail-card-empty">
                       No {childCfg.label.toLowerCase()} yet.
                     </p>
                   );
                 }
                 return (
-                  <div key={childCfg.name} className="glossary-definitions">
+                  <div key={childCfg.name} className="detail-card-children">
                     {childItems.map((child, i) => (
-                      <div key={child.id} className="glossary-def">
-                        <div className="glossary-def-content">
+                      <div key={child.id} className="detail-card-child">
+                        <div className="detail-card-child-content">
                           {childItems.length > 1 && (
-                            <span className="glossary-def-num">{i + 1}.</span>
+                            <span className="detail-card-child-num">{i + 1}.</span>
                           )}
-                          <div className="glossary-def-text">
+                          <div className="detail-card-child-text">
                             {childCfg.fields
                               .filter((f) => f.showInList)
                               .map((f) => {
                                 const val = child[f.name];
                                 if (val == null) return null;
-                                if (f.type === "select" && f.source === "categories") {
+                                if (f.type === "select" && f.source) {
                                   return (
                                     <span key={f.name} className="badge">
-                                      {categoryBreadcrumb(val)}
+                                      {breadcrumb(f.source, val)}
                                     </span>
                                   );
                                 }
@@ -245,7 +245,7 @@ export default function CrudList({ resource, extraActions }) {
                                 return (
                                   <p
                                     key={f.name}
-                                    className={isFirst ? "glossary-def-en" : "glossary-def-da"}
+                                    className={isFirst ? "detail-card-child-primary" : "detail-card-child-secondary"}
                                   >
                                     {val}
                                   </p>
@@ -253,7 +253,7 @@ export default function CrudList({ resource, extraActions }) {
                               })}
                           </div>
                         </div>
-                        <div className="glossary-def-actions">
+                        <div className="detail-card-child-actions">
                           <Link
                             to={`/${resource.name}/${pk}/${childCfg.name}/${child.id}/edit`}
                             className="btn btn-sm"
@@ -313,8 +313,8 @@ export default function CrudList({ resource, extraActions }) {
               <option value="">{filter.emptyLabel || `All ${filter.label}`}</option>
               {getFilterSourceItems(filter).map((item) => (
                 <option key={item.id} value={item.id}>
-                  {filter.source === "categories"
-                    ? categoryBreadcrumb(item.id)
+                  {filter.source
+                    ? breadcrumb(filter.source, item.id)
                     : item.label || item.id}
                 </option>
               ))}

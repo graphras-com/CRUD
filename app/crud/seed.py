@@ -3,8 +3,8 @@
 The seed file format matches the backup format::
 
     {
-        "categories": [...],
-        "terms": [...]
+        "groups": [...],
+        "items": [...]
     }
 
 Seeding is **idempotent**: it only runs if the first registered resource

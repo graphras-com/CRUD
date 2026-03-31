@@ -10,35 +10,33 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.crud.registry import ChildResourceConfig, ResourceConfig, ResourceRegistry
-from resources.models import CategoryModel, DefinitionModel, TermModel
+from resources.models import DetailModel, GroupModel, ItemModel
 from resources.schemas import (
-    BackupCategory,
-    BackupTerm,
-    CategoryCreate,
-    CategoryRead,
-    CategoryUpdate,
-    DefinitionCreate,
-    DefinitionRead,
-    DefinitionUpdate,
-    TermCreate,
-    TermRead,
-    TermUpdate,
+    BackupGroup,
+    BackupItem,
+    DetailCreate,
+    DetailRead,
+    DetailUpdate,
+    GroupCreate,
+    GroupRead,
+    GroupUpdate,
+    ItemCreate,
+    ItemRead,
+    ItemUpdate,
 )
 
 # ---------------------------------------------------------------------------
 # Application metadata
 # ---------------------------------------------------------------------------
 
-APP_TITLE = "Dictionary API"
+APP_TITLE = "CRUD API"
 APP_VERSION = "0.1.0"
 
 # Role required for destructive operations (backup restore)
-ADMIN_ROLE = "Glossary.Admin"
+ADMIN_ROLE = "App.Admin"
 
 # Seed data file
-SEED_FILE = (
-    Path(__file__).resolve().parent.parent / "base_data_import" / "glossary-seed.json"
-)
+SEED_FILE = Path(__file__).resolve().parent.parent / "base_data_import" / "seed.json"
 
 # ---------------------------------------------------------------------------
 # Resource definitions
@@ -46,60 +44,60 @@ SEED_FILE = (
 
 registry = ResourceRegistry()
 
-# -- Categories (self-referencing hierarchy) --------------------------------
+# -- Groups (self-referencing hierarchy) ------------------------------------
 
 registry.register(
     ResourceConfig(
-        name="categories",
-        model=CategoryModel,
-        create_schema=CategoryCreate,
-        read_schema=CategoryRead,
-        update_schema=CategoryUpdate,
+        name="groups",
+        model=GroupModel,
+        create_schema=GroupCreate,
+        read_schema=GroupRead,
+        update_schema=GroupUpdate,
         pk_field="id",
         pk_type=str,
         order_by="id",
         unique_fields=["id"],
-        fk_validations={"parent_id": CategoryModel},
+        fk_validations={"parent_id": GroupModel},
         protect_on_delete=True,
-        label="Categories",
-        label_singular="Category",
-        backup_schema=BackupCategory,
+        label="Groups",
+        label_singular="Group",
+        backup_schema=BackupGroup,
         self_referencing_fk="parent_id",
     )
 )
 
-# -- Terms (with nested definitions) ---------------------------------------
+# -- Items (with nested details) -------------------------------------------
 
 registry.register(
     ResourceConfig(
-        name="terms",
-        model=TermModel,
-        create_schema=TermCreate,
-        read_schema=TermRead,
-        update_schema=TermUpdate,
+        name="items",
+        model=ItemModel,
+        create_schema=ItemCreate,
+        read_schema=ItemRead,
+        update_schema=ItemUpdate,
         pk_field="id",
         pk_type=int,
-        order_by="term",
-        unique_fields=["term"],
-        searchable_fields=["term"],
-        filterable_fks={"category": "definitions.category_id"},
-        label="Terms",
-        label_singular="Term",
-        backup_schema=BackupTerm,
-        backup_children_field="definitions",
+        order_by="name",
+        unique_fields=["name"],
+        searchable_fields=["name"],
+        filterable_fks={"group": "details.group_id"},
+        label="Items",
+        label_singular="Item",
+        backup_schema=BackupItem,
+        backup_children_field="details",
         children=[
             ChildResourceConfig(
-                name="definitions",
-                model=DefinitionModel,
-                create_schema=DefinitionCreate,
-                read_schema=DefinitionRead,
-                update_schema=DefinitionUpdate,
+                name="details",
+                model=DetailModel,
+                create_schema=DetailCreate,
+                read_schema=DetailRead,
+                update_schema=DetailUpdate,
                 pk_field="id",
                 pk_type=int,
-                parent_fk="term_id",
-                fk_validations={"category_id": CategoryModel},
-                label="Definitions",
-                label_singular="Definition",
+                parent_fk="item_id",
+                fk_validations={"group_id": GroupModel},
+                label="Details",
+                label_singular="Detail",
             )
         ],
     )
@@ -116,6 +114,4 @@ CUSTOM_ROUTERS: list = []
 
 def _load_custom_routers():
     """Load application-specific routers that aren't auto-generated."""
-    from resources.routers import extract_glossary, recommend
-
-    return [recommend.router, extract_glossary.router]
+    return []

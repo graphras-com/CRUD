@@ -7,14 +7,11 @@ All configuration is done via environment variables. The backend reads from `.en
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `DATABASE_URL` | No | *(none)* | Full database connection string. Accepts `postgresql://`, `postgres://`, or `postgresql+asyncpg://` formats. Takes priority over `DATABASE_PATH`. |
-| `DATABASE_PATH` | No | `./dictionary.db` (local), `/data/dictionary.db` (Docker) | Path to SQLite database file. Used as fallback when `DATABASE_URL` is not set. |
-| `AUTH_DISABLED` | No | `false` | Set `true` to skip JWT validation. When enabled, a synthetic admin user (`Glossary.Admin` role) is injected for all requests. **Local development only.** |
+| `DATABASE_PATH` | No | `./app.db` (local), `/data/app.db` (Docker) | Path to SQLite database file. Used as fallback when `DATABASE_URL` is not set. |
+| `AUTH_DISABLED` | No | `false` | Set `true` to skip JWT validation. When enabled, a synthetic admin user (`App.Admin` role) is injected for all requests. **Local development only.** |
 | `TENANT_ID` | Yes* | *(none)* | Microsoft Entra tenant ID (GUID). |
 | `API_AUDIENCE` | Yes* | *(none)* | Application ID URI of the API app registration (e.g. `api://aaaaaaaa-...`). |
 | `CORS_ALLOWED_ORIGINS` | No | `http://localhost:5173,http://localhost:8000` | Comma-separated list of allowed CORS origins. |
-| `OPENAI_API_KEY` | No | *(none)* | OpenAI API key for AI definition recommendations. If not set, the recommend endpoint returns a 503 error. |
-| `OPENAI_RECOMMENDATION_MODEL` | No | `gpt-4.1-mini` | Model name passed to the OpenAI API. |
-| `OPENAI_API_URL` | No | `https://api.openai.com/v1/chat/completions` | OpenAI-compatible chat completions endpoint. Override to use Azure OpenAI or other compatible providers. |
 
 \* Required when `AUTH_DISABLED=false`.
 
@@ -58,10 +55,6 @@ These are exposed as `__BUILD_COMMIT__`, `__BUILD_TAG__`, `__BUILD_BRANCH__`, an
 ## Example `.env` File
 
 ```env
-# ── OpenAI (for AI-powered definition recommendations) ──
-OPENAI_API_KEY=sk-proj-your-key-here
-OPENAI_RECOMMENDATION_MODEL=gpt-4.1-mini
-
 # ── Microsoft Entra ID Authentication ──
 AUTH_DISABLED=true
 TENANT_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
@@ -71,6 +64,6 @@ API_AUDIENCE=api://xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 CORS_ALLOWED_ORIGINS=http://localhost:5173,http://localhost:8000
 
 # ── Database ──
-# For PostgreSQL: DATABASE_URL=postgresql://user:password@host:5432/glossary
-DATABASE_PATH=./dictionary.db
+# For PostgreSQL: DATABASE_URL=postgresql://user:password@host:5432/myapp
+DATABASE_PATH=./app.db
 ```

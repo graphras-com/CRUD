@@ -314,6 +314,70 @@ toml = [
 ]
 
 [[package]]
+name = "crud-template"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "aiosqlite" },
+    { name = "alembic" },
+    { name = "asyncpg" },
+    { name = "fastapi", extra = ["standard"] },
+    { name = "greenlet" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "pydantic-settings" },
+    { name = "pyjwt", extra = ["crypto"] },
+    { name = "sqlalchemy" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "httpx" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "httpx" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiosqlite", specifier = ">=0.20" },
+    { name = "alembic", specifier = ">=1.15" },
+    { name = "asyncpg", specifier = ">=0.30" },
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.115" },
+    { name = "greenlet", specifier = ">=3.3.2" },
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
+    { name = "pydantic", specifier = ">=2.12.5" },
+    { name = "pydantic-settings", specifier = ">=2.0" },
+    { name = "pyjwt", extras = ["crypto"], specifier = ">=2.9" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
+    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
+    { name = "pytest-cov", marker = "extra == 'dev'" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.15.7" },
+    { name = "sqlalchemy", specifier = ">=2.0" },
+]
+provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "httpx", specifier = ">=0.27" },
+    { name = "pytest", specifier = ">=8.0" },
+    { name = "pytest-asyncio", specifier = ">=0.24" },
+    { name = "pytest-cov" },
+    { name = "ruff", specifier = ">=0.15.7" },
+]
+
+[[package]]
 name = "cryptography"
 version = "46.0.6"
 source = { registry = "https://pypi.org/simple" }
@@ -560,70 +624,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/8d/88/f7e28100fa7ff4a26a3493ad7a5d45d70f6de858c05f5c34aca3570c5839/fastar-0.9.0-pp311-pypy311_pp73-musllinux_1_2_armv7l.whl", hash = "sha256:7bf6958bb6f94e5ec522e4a255b8e940d3561ad973f0be5dde6115b5a0854af5", size = 1039106, upload-time = "2026-03-20T14:26:07.686Z" },
     { url = "https://files.pythonhosted.org/packages/c0/de/52c578180fdaaf0f3289de8a878f1ac070f7e3e18a0689d3fd44dd7dae2c/fastar-0.9.0-pp311-pypy311_pp73-musllinux_1_2_i686.whl", hash = "sha256:c210b839c0a33cf8d08270963ad237bcb63029dddf6d6025333f7e5ca63930bd", size = 1080754, upload-time = "2026-03-20T14:26:20.299Z" },
     { url = "https://files.pythonhosted.org/packages/a4/45/1ea024be428ad9d89e9f738c9379507e97df9f9ed97e50e4a1d10ff90fef/fastar-0.9.0-pp311-pypy311_pp73-musllinux_1_2_x86_64.whl", hash = "sha256:fad70e257daefb42bab68dcd68beaf2e2a99da056d65f2c9f988449a4e869306", size = 1031304, upload-time = "2026-03-20T14:26:33.294Z" },
-]
-
-[[package]]
-name = "glossary"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "aiosqlite" },
-    { name = "alembic" },
-    { name = "asyncpg" },
-    { name = "fastapi", extra = ["standard"] },
-    { name = "greenlet" },
-    { name = "httpx" },
-    { name = "pydantic" },
-    { name = "pydantic-settings" },
-    { name = "pyjwt", extra = ["crypto"] },
-    { name = "sqlalchemy" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "httpx" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "httpx" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aiosqlite", specifier = ">=0.20" },
-    { name = "alembic", specifier = ">=1.15" },
-    { name = "asyncpg", specifier = ">=0.30" },
-    { name = "fastapi", extras = ["standard"], specifier = ">=0.115" },
-    { name = "greenlet", specifier = ">=3.3.2" },
-    { name = "httpx", specifier = ">=0.27" },
-    { name = "httpx", marker = "extra == 'dev'", specifier = ">=0.27" },
-    { name = "pydantic", specifier = ">=2.12.5" },
-    { name = "pydantic-settings", specifier = ">=2.0" },
-    { name = "pyjwt", extras = ["crypto"], specifier = ">=2.9" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
-    { name = "pytest-cov", marker = "extra == 'dev'" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.15.7" },
-    { name = "sqlalchemy", specifier = ">=2.0" },
-]
-provides-extras = ["dev"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "httpx", specifier = ">=0.27" },
-    { name = "pytest", specifier = ">=8.0" },
-    { name = "pytest-asyncio", specifier = ">=0.24" },
-    { name = "pytest-cov" },
-    { name = "ruff", specifier = ">=0.15.7" },
 ]
 
 [[package]]

@@ -244,7 +244,7 @@ async def require_auth(
             oid="00000000-0000-0000-0000-000000000000",
             tid="dev-tenant",
             scopes=["access_as_user"],
-            roles=["Glossary.Admin"],
+            roles=["App.Admin"],
             raw={},
         )
 
@@ -287,7 +287,7 @@ def require_role(*required_roles: str):
 
     Usage::
 
-        @router.delete("/items/{id}", dependencies=[Depends(require_role("Glossary.Admin"))])
+        @router.delete("/items/{id}", dependencies=[Depends(require_role("App.Admin"))])
         async def delete_item(...): ...
     """
 

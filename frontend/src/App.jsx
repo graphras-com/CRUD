@@ -22,8 +22,6 @@ import { resources, appConfig } from "./config/resources";
 // Import custom pages that replace generic ones for specific resources.
 // When creating a new app, remove or replace these imports.
 import Home from "./pages/Home";
-import TermListPage from "./pages/TermList";
-import TermCreatePage from "./pages/TermCreate";
 
 /**
  * Map of resource name -> { list, create, edit, detail } custom components.
@@ -33,12 +31,7 @@ import TermCreatePage from "./pages/TermCreate";
  * When creating a new app from the template, clear this map to use
  * fully generic pages, or add your own custom overrides.
  */
-const pageOverrides = {
-  terms: {
-    list: TermListPage,
-    create: TermCreatePage,
-  },
-};
+const pageOverrides = {};
 
 function generateResourceRoutes() {
   const routes = [];

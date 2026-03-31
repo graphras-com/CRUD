@@ -1,18 +1,18 @@
 /**
- * RBAC role constants and helpers for the Glossary application.
+ * RBAC role constants and helpers for the application.
  *
  * These roles must match the App Roles defined in the Entra API
  * app registration manifest.
  */
 
 /** Role that grants full read/write access including backup/restore */
-export const ROLE_ADMIN = "Glossary.Admin";
+export const ROLE_ADMIN = "App.Admin";
 
-/** Role that grants read/write access to terms, categories, definitions */
-export const ROLE_EDITOR = "Glossary.Editor";
+/** Role that grants read/write access to resources */
+export const ROLE_EDITOR = "App.Editor";
 
 /** Role that grants read-only access */
-export const ROLE_READER = "Glossary.Reader";
+export const ROLE_READER = "App.Reader";
 
 /**
  * Check if the user's token claims include at least one of the given roles.

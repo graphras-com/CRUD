@@ -50,7 +50,7 @@ RUN mkdir -p /data
 # Database configuration:
 #   - Set DATABASE_URL for PostgreSQL (e.g. postgresql://user:pass@host/db)
 #   - Falls back to SQLite at DATABASE_PATH when DATABASE_URL is not set
-ENV DATABASE_PATH=/data/dictionary.db
+ENV DATABASE_PATH=/data/app.db
 
 EXPOSE 8000
 

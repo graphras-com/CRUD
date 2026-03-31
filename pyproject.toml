@@ -3,9 +3,9 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "glossary"
+name = "crud-template"
 version = "0.1.0"
-description = "Glossary API (English/Danish) with categories, terms, and definitions"
+description = "Generic CRUD API template with auto-generated routes and pages"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

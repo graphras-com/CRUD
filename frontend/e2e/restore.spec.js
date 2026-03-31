@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { Buffer } from "node:buffer";
-import { mockApi, CATEGORIES, TERMS } from "./helpers.js";
+import { mockApi, GROUPS, ITEMS } from "./helpers.js";
 
 test.describe("Restore page", () => {
   test.beforeEach(async ({ page }) => {
@@ -18,11 +18,11 @@ test.describe("Restore page", () => {
 
     const backupData = {
       version: 1,
-      categories: [{ id: "test", parent_id: null, label: "Test" }],
-      terms: [
+      groups: [{ id: "test", parent_id: null, label: "Test" }],
+      items: [
         {
-          term: "Widget",
-          definitions: [{ en: "A widget", da: null, category_id: "test" }],
+          name: "Example",
+          details: [{ description: "An example entry", notes: null, group_id: "test" }],
         },
       ],
     };
@@ -37,9 +37,9 @@ test.describe("Restore page", () => {
     });
 
     // Preview should show
-    await expect(page.locator(".card-body")).toContainText("Categories:");
+    await expect(page.locator(".card-body")).toContainText("Groups:");
     await expect(page.locator(".card-body")).toContainText("1");
-    await expect(page.locator(".card-body")).toContainText("Terms:");
+    await expect(page.locator(".card-body")).toContainText("Items:");
     await expect(page.locator(".card-body")).toContainText("1");
 
     // Restore button should be enabled
@@ -79,11 +79,11 @@ test.describe("Restore page", () => {
 
     const backupData = {
       version: 1,
-      categories: [{ id: "restored", parent_id: null, label: "Restored" }],
-      terms: [
+      groups: [{ id: "restored", parent_id: null, label: "Restored" }],
+      items: [
         {
-          term: "NewTerm",
-          definitions: [{ en: "A new term", da: null, category_id: "restored" }],
+          name: "NewItem",
+          details: [{ description: "A new item", notes: null, group_id: "restored" }],
         },
       ],
     };
@@ -103,8 +103,8 @@ test.describe("Restore page", () => {
 
     // Success message should show
     await expect(page.locator(".card-body")).toContainText("Restore complete");
-    await expect(page.locator(".card-body")).toContainText("1 categories");
-    await expect(page.locator(".card-body")).toContainText("1 terms");
+    await expect(page.locator(".card-body")).toContainText("1 groups");
+    await expect(page.locator(".card-body")).toContainText("1 items");
   });
 
   test("cancelling confirmation does not restore", async ({ page }) => {
@@ -112,8 +112,8 @@ test.describe("Restore page", () => {
 
     const backupData = {
       version: 1,
-      categories: [{ id: "x", parent_id: null, label: "X" }],
-      terms: [],
+      groups: [{ id: "x", parent_id: null, label: "X" }],
+      items: [],
     };
 
     const fileInput = page.locator("#backup-file");

@@ -29,7 +29,7 @@ The project uses a multi-stage Dockerfile:
 
 ```yaml
 services:
-  glossary:
+  app:
     build:
       context: .
       args:
@@ -39,19 +39,19 @@ services:
     ports:
       - "5173:8000"
     volumes:
-      - glossary-data:/data
+      - app-data:/data
     env_file: .env
     environment:
-      - DATABASE_PATH=/data/dictionary.db
+      - DATABASE_PATH=/data/app.db
     restart: unless-stopped
 
 volumes:
-  glossary-data:
+  app-data:
 ```
 
 Key details:
 - **Port mapping:** host port **5173** maps to container port 8000. Access at `http://localhost:5173`.
-- **Data persistence:** SQLite database is stored in a named Docker volume (`glossary-data`) at `/data/dictionary.db`.
+- **Data persistence:** SQLite database is stored in a named Docker volume (`app-data`) at `/data/app.db`.
 - **Runtime config:** loaded from `.env` via `env_file`. Auth env vars (`AUTH_DISABLED`, `TENANT_ID`, etc.) are runtime. Vite env vars are build-time only.
 
 ### Building Manually
@@ -65,7 +65,7 @@ docker build \
   --build-arg VITE_CLIENT_ID=your-client-id \
   --build-arg VITE_TENANT_ID=your-tenant-id \
   --build-arg VITE_API_SCOPE=api://your-api-id/access_as_user \
-  -t glossary:latest .
+  -t crud-app:latest .
 ```
 
 ---
@@ -234,7 +234,7 @@ The application runs on **k3s** with the following components:
 
 - **Operator:** CloudNativePG
 - **Cluster:** a shared PostgreSQL cluster named `pg` in the `default` namespace
-- **Per-environment databases:** created as `Database` CRDs (e.g. `glossary_staging`, `glossary_prod`)
+- **Per-environment databases:** created as `Database` CRDs (e.g. `{app}_staging`, `{app}_prod`)
 - **Credentials:** the CNPG cluster's `pg-app` secret provides the username and password; the pipeline assembles the full `DATABASE_URL` and stores it in a per-namespace secret
 
 ### Application Pod

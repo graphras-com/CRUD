@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "groups": [
+    { "id": "general", "parent_id": null, "label": "General" },
+    { "id": "general.internal", "parent_id": "general", "label": "Internal" },
+    { "id": "general.external", "parent_id": "general", "label": "External" },
+    { "id": "reference", "parent_id": null, "label": "Reference" }
+  ],
+  "items": [
+    {
+      "name": "Example Item",
+      "details": [
+        {
+          "description": "This is a sample detail entry.",
+          "notes": "Optional notes for this detail.",
+          "group_id": "general"
+        }
+      ]
+    },
+    {
+      "name": "Another Item",
+      "details": [
+        {
+          "description": "Primary description for this item.",
+          "notes": null,
+          "group_id": "general.internal"
+        },
+        {
+          "description": "An alternative description.",
+          "notes": "With additional notes.",
+          "group_id": "reference"
+        }
+      ]
+    }
+  ]
+}

@@ -48,7 +48,7 @@ def _has_relationship(model: type, rel_name: str) -> bool:
 
 
 def _resolve_filter_path(model: type, dot_path: str):
-    """Resolve a dot-separated path like ``"definitions.category_id"`` into
+    """Resolve a dot-separated path like ``"details.group_id"`` into
     a (relationship_name, column_name) tuple for building join + where.
 
     Returns a tuple or ``None`` for a direct column filter.
@@ -94,7 +94,7 @@ def _make_create_endpoint(config: ResourceConfig, Model, pk_field):
                         detail=f"{fk_label} '{val}' not found",
                     )
 
-        # Handle nested children creation (e.g., term + definitions)
+        # Handle nested children creation (e.g., item + details)
         child_data_map: dict[str, list[dict]] = {}
         for child_cfg in config.children:
             child_field = child_cfg.name
@@ -110,7 +110,7 @@ def _make_create_endpoint(config: ResourceConfig, Model, pk_field):
                                 if not ref:
                                     raise HTTPException(
                                         422,
-                                        detail=f"Category '{cfk_val}' not found",
+                                        detail=f"Referenced '{cfk_val}' not found",
                                     )
                     child_data_map[child_field] = child_rows
 

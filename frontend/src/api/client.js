@@ -5,9 +5,6 @@
  * and auto-generates CRUD functions for each resource defined in the
  * resource config.  When creating a new application, you should not
  * need to modify this file.
- *
- * Domain-specific API functions (e.g. `recommendDefinition`) can be
- * added at the bottom of this file or in a separate module.
  */
 
 import { InteractionRequiredAuthError } from "@azure/msal-browser";
@@ -167,9 +164,9 @@ function buildResourceApi(resource) {
  *
  * Usage:
  *   import { api } from "../api/client";
- *   const terms = await api.terms.list({ q: "LTE" });
- *   const term = await api.terms.get(1);
- *   await api.terms.definitions.create(termId, { en: "...", ... });
+ *   const items = await api.items.list({ q: "example" });
+ *   const item = await api.items.get(1);
+ *   await api.items.details.create(itemId, { description: "...", ... });
  */
 export const api = {};
 for (const resource of resources) {
@@ -180,49 +177,49 @@ for (const resource of resources) {
 // Backward-compatible named exports (so existing code doesn't break)
 // =========================================================================
 
-// ── Categories ──
-export function getCategories() {
-  return api.categories.list();
+// ── Groups ──
+export function getGroups() {
+  return api.groups.list();
 }
-export function getCategory(id) {
-  return api.categories.get(id);
+export function getGroup(id) {
+  return api.groups.get(id);
 }
-export function createCategory(data) {
-  return api.categories.create(data);
+export function createGroup(data) {
+  return api.groups.create(data);
 }
-export function updateCategory(id, data) {
-  return api.categories.update(id, data);
+export function updateGroup(id, data) {
+  return api.groups.update(id, data);
 }
-export function deleteCategory(id) {
-  return api.categories.delete(id);
-}
-
-// ── Terms ──
-export function getTerms(params = {}) {
-  return api.terms.list(params);
-}
-export function getTerm(id) {
-  return api.terms.get(id);
-}
-export function createTerm(data) {
-  return api.terms.create(data);
-}
-export function updateTerm(id, data) {
-  return api.terms.update(id, data);
-}
-export function deleteTerm(id) {
-  return api.terms.delete(id);
+export function deleteGroup(id) {
+  return api.groups.delete(id);
 }
 
-// ── Definitions (nested under terms) ──
-export function createDefinition(termId, data) {
-  return api.terms.definitions.create(termId, data);
+// ── Items ──
+export function getItems(params = {}) {
+  return api.items.list(params);
 }
-export function updateDefinition(termId, definitionId, data) {
-  return api.terms.definitions.update(termId, definitionId, data);
+export function getItem(id) {
+  return api.items.get(id);
 }
-export function deleteDefinition(termId, definitionId) {
-  return api.terms.definitions.delete(termId, definitionId);
+export function createItem(data) {
+  return api.items.create(data);
+}
+export function updateItem(id, data) {
+  return api.items.update(id, data);
+}
+export function deleteItem(id) {
+  return api.items.delete(id);
+}
+
+// ── Details (nested under items) ──
+export function createDetail(itemId, data) {
+  return api.items.details.create(itemId, data);
+}
+export function updateDetail(itemId, detailId, data) {
+  return api.items.details.update(itemId, detailId, data);
+}
+export function deleteDetail(itemId, detailId) {
+  return api.items.details.delete(itemId, detailId);
 }
 
 // ── Backup / Restore ──
@@ -231,22 +228,6 @@ export function getBackup() {
 }
 export function restoreBackup(data) {
   return request("/backup/restore", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-}
-
-// ── Domain-specific: AI Recommendation (app-specific, not auto-generated) ──
-export function recommendDefinition(data) {
-  return request("/terms/recommend-definition", {
-    method: "POST",
-    body: JSON.stringify(data),
-  });
-}
-
-// ── Domain-specific: AI Glossary Extraction (app-specific, not auto-generated) ──
-export function extractGlossary(data) {
-  return request("/terms/extract-glossary", {
     method: "POST",
     body: JSON.stringify(data),
   });

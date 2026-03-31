@@ -21,8 +21,8 @@ export default function Restore() {
     reader.onload = (ev) => {
       try {
         const data = JSON.parse(ev.target.result);
-        if (!data.categories || !data.terms) {
-          setError("Invalid backup file: missing 'categories' or 'terms' keys.");
+        if (!data.groups || !data.items) {
+          setError("Invalid backup file: missing 'groups' or 'items' keys.");
           return;
         }
         setPreview(data);
@@ -64,8 +64,7 @@ export default function Restore() {
 
       <p>
         Upload a backup JSON file to replace all current data. This will delete
-        all existing categories, terms, and definitions before importing the
-        backup.
+        all existing records before importing the backup.
       </p>
 
       {error && <ErrorMessage message={error} />}
@@ -89,16 +88,16 @@ export default function Restore() {
           </div>
           <div className="card-body">
             <p>
-              Categories: <strong>{preview.categories.length}</strong>
+              Groups: <strong>{preview.groups.length}</strong>
             </p>
             <p>
-              Terms: <strong>{preview.terms.length}</strong>
+              Items: <strong>{preview.items.length}</strong>
             </p>
             <p>
-              Definitions:{" "}
+              Details:{" "}
               <strong>
-                {preview.terms.reduce(
-                  (sum, t) => sum + (t.definitions ? t.definitions.length : 0),
+                {preview.items.reduce(
+                  (sum, t) => sum + (t.details ? t.details.length : 0),
                   0
                 )}
               </strong>
@@ -121,8 +120,8 @@ export default function Restore() {
         <div className="card" style={{ marginTop: 20 }}>
           <div className="card-body">
             <p>
-              <strong>Restore complete</strong> &mdash; {result.categories}{" "}
-              categories, {result.terms} terms imported.
+              <strong>Restore complete</strong> &mdash; {result.groups}{" "}
+              groups, {result.items} items imported.
             </p>
           </div>
         </div>

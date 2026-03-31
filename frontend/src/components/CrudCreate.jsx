@@ -4,7 +4,7 @@
  * Props:
  *   resource       — resource config object
  *   parentResource — optional parent resource config (for nested children)
- *   children       — passed through to CrudForm (e.g. recommend button)
+ *   children       — passed through to CrudForm (e.g. extra action buttons)
  */
 
 import { useNavigate, useParams } from "react-router-dom";

@@ -20,7 +20,7 @@ Two app registrations are required in Microsoft Entra ID: one for the API and on
 
 1. Go to **Azure Portal > Microsoft Entra ID > App registrations > New registration**.
 2. Configure:
-   - **Name:** `Glossary API`
+   - **Name:** `CRUD API`
    - **Supported account types:** `Accounts in this organizational directory only`
    - **Redirect URI:** leave blank
 3. Click **Register**.
@@ -39,19 +39,19 @@ Two app registrations are required in Microsoft Entra ID: one for the API and on
 
 Create these roles under **App roles**:
 
-| Display Name     | Value             | Description                                |
-|------------------|-------------------|--------------------------------------------|
-| Glossary Admin   | `Glossary.Admin`  | Full access including backup/restore       |
-| Glossary Editor  | `Glossary.Editor` | Create, edit, delete terms and categories  |
-| Glossary Reader  | `Glossary.Reader` | Read-only access                           |
+| Display Name | Value        | Description                                |
+|--------------|--------------|--------------------------------------------|
+| App Admin    | `App.Admin`  | Full access including backup/restore       |
+| App Editor   | `App.Editor` | Create, edit, delete items and groups      |
+| App Reader   | `App.Reader` | Read-only access                           |
 
-Assign roles to users/groups via **Enterprise Applications > Glossary API > Users and groups**.
+Assign roles to users/groups via **Enterprise Applications > CRUD API > Users and groups**.
 
 ### SPA App Registration
 
 1. Go to **App registrations > New registration**.
 2. Configure:
-   - **Name:** `Glossary SPA`
+   - **Name:** `CRUD SPA`
    - **Supported account types:** `Accounts in this organizational directory only`
    - **Redirect URI:** Platform = `Single-page application (SPA)`, URI = `http://localhost:5173`
 3. Click **Register**.
@@ -68,7 +68,7 @@ Add all environments under **Authentication > Single-page application**:
 
 #### API Permission
 
-1. Go to **API permissions > Add a permission > My APIs > Glossary API**.
+1. Go to **API permissions > Add a permission > My APIs > CRUD API**.
 2. Select **Delegated permissions**, check `access_as_user`.
 3. Click **Grant admin consent for [Your Org]**.
 
@@ -134,7 +134,7 @@ import { hasRole, isAdmin, ROLE_ADMIN, ROLE_EDITOR } from "./auth/roles";
 hasRole(account, ROLE_ADMIN, ROLE_EDITOR); // true if user has either role
 
 // Shorthand for admin check
-isAdmin(account); // true if user has Glossary.Admin
+isAdmin(account); // true if user has App.Admin
 ```
 
 Roles are read from `account.idTokenClaims.roles` (an array of role value strings assigned in Entra ID).
@@ -180,7 +180,7 @@ TokenPayload(
     name="Local Developer",
     email="dev@localhost",
     scopes=["access_as_user"],
-    roles=["Glossary.Admin"],
+    roles=["App.Admin"],
 )
 ```
 
@@ -205,9 +205,9 @@ The `TokenPayload` dataclass (defined in `app/auth.py`) contains:
 
 All CRUD endpoints require a valid token. Additional role-based protection:
 
-| Endpoint              | Role Required      |
-|-----------------------|--------------------|
-| `POST /backup/restore`| `Glossary.Admin`   |
+| Endpoint              | Role Required    |
+|-----------------------|------------------|
+| `POST /backup/restore`| `App.Admin`     |
 
 All other endpoints require authentication but no specific role.
 
@@ -220,7 +220,7 @@ from app.auth import require_role
 
 @router.delete(
     "/{item_id}",
-    dependencies=[Depends(require_role("Glossary.Admin"))],
+    dependencies=[Depends(require_role("App.Admin"))],
 )
 async def delete_item(item_id: int):
     ...

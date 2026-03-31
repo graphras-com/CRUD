@@ -1,23 +1,18 @@
 [![status-badge](https://ci.graphras.com/api/badges/1/status.svg?events=push%2Ctag%2Crelease%2Cpull_request%2Cdeployment%2Cmanual)](https://ci.graphras.com/repos/1)
 
-# Glossary
+# CRUD Template
 
-A full-stack bilingual telecom glossary application for browsing, searching, and managing telecommunications terminology with English and Danish definitions, organized into hierarchical categories.
-
-Built on a **generic CRUD framework** -- domain entities are declared in configuration files and the framework auto-generates backend routers, API client functions, and frontend pages.
+A full-stack generic CRUD application template. Define your entities in configuration files and the framework auto-generates backend routers, API client functions, and frontend pages.
 
 ## Features
 
-- **Bilingual definitions** -- every term supports English (required) and Danish (optional) definitions
-- **Hierarchical categories** -- dot-notation taxonomy (e.g. `network.mobile`) with parent-child relationships
-- **Search and filter** -- real-time text search by term name with category dropdown filter
-- **AI-powered recommendations** -- generate English and Danish definition suggestions via OpenAI
-- **Glossary extraction** -- find existing glossary terms in free text (word-boundary matching)
-- **PDF export** -- generate an A4 glossary PDF with a clickable letter index, grouped headings, and bilingual definitions
+- **Auto-generated CRUD** -- declare resources in config and get full create, read, update, delete endpoints and UI pages
+- **Hierarchical groups** -- dot-notation taxonomy (e.g. `engineering.backend`) with parent-child relationships
+- **Nested resources** -- items with child details, managed through parent routes
+- **Search and filter** -- real-time text search with group dropdown filter
 - **Backup and restore** -- download the entire database as JSON or upload a JSON file to restore it
-- **Full CRUD** -- create, read, update, and delete terms, definitions, and categories
 - **Microsoft Entra ID authentication** -- OIDC + OAuth 2.0 with PKCE, RBAC roles, and JWT validation
-- **Seed data** -- ships with 18 telecom categories and 165 terms
+- **Seed data** -- ships with example groups and items for quick start
 
 ## Tech Stack
 
@@ -27,8 +22,7 @@ Built on a **generic CRUD framework** -- domain entities are declared in configu
 | Database   | SQLite (local dev / Docker) or PostgreSQL (production)   |
 | Frontend   | React 19, React Router 7, Vite 8                        |
 | Auth       | Microsoft Entra ID (MSAL.js + PyJWT)                    |
-| PDF        | jsPDF + jspdf-autotable (client-side)                    |
-| Testing    | pytest (125 tests), Vitest, Playwright                   |
+| Testing    | pytest, Vitest, Playwright                               |
 | Packaging  | uv (Python), npm (Node)                                  |
 | Container  | Docker (multi-stage, multi-platform) + Docker Compose    |
 | CI/CD      | GitHub Actions + Woodpecker CI                           |
@@ -49,7 +43,7 @@ cp .env.example .env
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
-The database is created automatically on first launch and seeded with telecom glossary data.
+The database is created automatically on first launch and seeded with example data.
 
 ### Frontend
 

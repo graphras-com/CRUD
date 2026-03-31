@@ -14,7 +14,7 @@
  *   "code"     — rendered in <code> tags in list views
  *
  * Special field options:
- *   source        — resource name to populate a <select> (e.g. "categories")
+ *   source        — resource name to populate a <select> (e.g. "groups")
  *   sourceLabel   — function (item, breadcrumb) => display text for select options
  *   showInList    — show this field as a column in the list view
  *   showInForm    — true | "create-only" | "edit-only" | false
@@ -25,10 +25,10 @@
 
 export const resources = [
   {
-    name: "categories",
-    label: "Categories",
-    labelSingular: "Category",
-    apiPath: "/categories",
+    name: "groups",
+    label: "Groups",
+    labelSingular: "Group",
+    apiPath: "/groups",
     pkField: "id",
     pkType: "string",
     navOrder: 2,
@@ -43,7 +43,7 @@ export const resources = [
         showInList: true,
         showInForm: "create-only",
         render: "code",
-        placeholder: "e.g. network.wireless",
+        placeholder: "e.g. engineering.backend",
       },
       {
         name: "label",
@@ -57,7 +57,7 @@ export const resources = [
         name: "parent_id",
         label: "Parent",
         type: "select",
-        source: "categories",
+        source: "groups",
         sourceLabel: (item, breadcrumb) =>
           `${breadcrumb(item.id)} (${item.id})`,
         showInList: true,
@@ -70,29 +70,29 @@ export const resources = [
     children: [],
   },
   {
-    name: "terms",
-    label: "Terms",
-    labelSingular: "Term",
-    apiPath: "/terms",
+    name: "items",
+    label: "Items",
+    labelSingular: "Item",
+    apiPath: "/items",
     pkField: "id",
     pkType: "number",
     navOrder: 1,
     listDisplay: "detail-cards",
     searchable: true,
-    searchPlaceholder: "Search terms...",
+    searchPlaceholder: "Search items...",
     filters: [
       {
-        param: "category",
-        label: "Category",
+        param: "group",
+        label: "Group",
         type: "select",
-        source: "categories",
-        emptyLabel: "All categories",
+        source: "groups",
+        emptyLabel: "All groups",
       },
     ],
     fields: [
       {
-        name: "term",
-        label: "Term",
+        name: "name",
+        label: "Name",
         type: "text",
         required: true,
         showInList: true,
@@ -101,14 +101,14 @@ export const resources = [
     ],
     children: [
       {
-        name: "definitions",
-        label: "Definitions",
-        labelSingular: "Definition",
-        parentFk: "term_id",
+        name: "details",
+        label: "Details",
+        labelSingular: "Detail",
+        parentFk: "item_id",
         fields: [
           {
-            name: "en",
-            label: "English",
+            name: "description",
+            label: "Description",
             type: "textarea",
             required: true,
             showInList: true,
@@ -116,8 +116,8 @@ export const resources = [
             rows: 3,
           },
           {
-            name: "da",
-            label: "Danish",
+            name: "notes",
+            label: "Notes",
             type: "textarea",
             showInList: true,
             showInForm: true,
@@ -126,10 +126,10 @@ export const resources = [
             suffix: "(optional)",
           },
           {
-            name: "category_id",
-            label: "Category",
+            name: "group_id",
+            label: "Group",
             type: "select",
-            source: "categories",
+            source: "groups",
             required: true,
             showInList: true,
             showInForm: true,
@@ -145,17 +145,16 @@ export const resources = [
  */
 export const appConfig = {
   /** Application name shown in the navbar brand and Home page */
-  name: "Telecom Glossary",
+  name: "CRUD App",
 
   /** Short description for the Home page */
-  description:
-    "A glossary of telecom terms with bilingual definitions (English / Danish).",
+  description: "A generic CRUD application template.",
 
   /** Show backup/restore links in the navbar */
   hasBackup: true,
 
   /** Role required for restore (destructive operation) */
-  backupRole: "Glossary.Admin",
+  backupRole: "App.Admin",
 
   /** Additional Home page cards (beyond auto-generated resource cards) */
   homeCards: [],

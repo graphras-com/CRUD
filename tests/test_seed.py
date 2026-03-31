@@ -4,7 +4,7 @@ import pytest
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import CategoryModel, DefinitionModel, TermModel
+from app.models import DetailModel, GroupModel, ItemModel
 from app.seed import SEED_FILE, seed
 
 
@@ -13,32 +13,32 @@ def _load_seed():
 
 
 @pytest.mark.asyncio
-async def test_seed_loads_all_categories(db_session: AsyncSession):
+async def test_seed_loads_all_groups(db_session: AsyncSession):
     await seed(db_session)
 
     payload = _load_seed()
-    result = await db_session.execute(select(func.count(CategoryModel.id)))
-    assert result.scalar() == len(payload["categories"])
+    result = await db_session.execute(select(func.count(GroupModel.id)))
+    assert result.scalar() == len(payload["groups"])
 
 
 @pytest.mark.asyncio
-async def test_seed_loads_all_terms(db_session: AsyncSession):
+async def test_seed_loads_all_items(db_session: AsyncSession):
     await seed(db_session)
 
     payload = _load_seed()
-    result = await db_session.execute(select(func.count(TermModel.id)))
-    assert result.scalar() == len(payload["terms"])
+    result = await db_session.execute(select(func.count(ItemModel.id)))
+    assert result.scalar() == len(payload["items"])
 
 
 @pytest.mark.asyncio
-async def test_seed_loads_all_definitions(db_session: AsyncSession):
+async def test_seed_loads_all_details(db_session: AsyncSession):
     await seed(db_session)
 
     payload = _load_seed()
-    total_defs = sum(len(t["definitions"]) for t in payload["terms"])
+    total_details = sum(len(i["details"]) for i in payload["items"])
 
-    result = await db_session.execute(select(func.count(DefinitionModel.id)))
-    assert result.scalar() == total_defs
+    result = await db_session.execute(select(func.count(DetailModel.id)))
+    assert result.scalar() == total_details
 
 
 @pytest.mark.asyncio
@@ -46,53 +46,53 @@ async def test_seed_is_idempotent(db_session: AsyncSession):
     """Calling seed twice should not insert duplicate data."""
     await seed(db_session)
 
-    result1 = await db_session.execute(select(func.count(CategoryModel.id)))
-    cat_count = result1.scalar()
-    result2 = await db_session.execute(select(func.count(TermModel.id)))
-    term_count = result2.scalar()
+    result1 = await db_session.execute(select(func.count(GroupModel.id)))
+    group_count = result1.scalar()
+    result2 = await db_session.execute(select(func.count(ItemModel.id)))
+    item_count = result2.scalar()
 
     # Seed again
     await seed(db_session)
 
-    result3 = await db_session.execute(select(func.count(CategoryModel.id)))
-    assert result3.scalar() == cat_count
-    result4 = await db_session.execute(select(func.count(TermModel.id)))
-    assert result4.scalar() == term_count
+    result3 = await db_session.execute(select(func.count(GroupModel.id)))
+    assert result3.scalar() == group_count
+    result4 = await db_session.execute(select(func.count(ItemModel.id)))
+    assert result4.scalar() == item_count
 
 
 @pytest.mark.asyncio
-async def test_seed_category_parent_references_valid(db_session: AsyncSession):
-    """Every category with a parent_id should reference an existing category."""
+async def test_seed_group_parent_references_valid(db_session: AsyncSession):
+    """Every group with a parent_id should reference an existing group."""
     await seed(db_session)
 
     result = await db_session.execute(
-        select(CategoryModel).where(CategoryModel.parent_id.isnot(None))
+        select(GroupModel).where(GroupModel.parent_id.isnot(None))
     )
     children = result.scalars().all()
     assert len(children) > 0
 
     for child in children:
-        parent = await db_session.get(CategoryModel, child.parent_id)
+        parent = await db_session.get(GroupModel, child.parent_id)
         assert parent is not None, (
-            f"Category '{child.id}' references missing parent '{child.parent_id}'"
+            f"Group '{child.id}' references missing parent '{child.parent_id}'"
         )
 
 
 @pytest.mark.asyncio
-async def test_seed_definition_category_references_valid(db_session: AsyncSession):
-    """Every definition's category_id should reference an existing category."""
+async def test_seed_detail_group_references_valid(db_session: AsyncSession):
+    """Every detail's group_id should reference an existing group."""
     await seed(db_session)
 
-    result = await db_session.execute(select(DefinitionModel))
-    definitions = result.scalars().all()
-    assert len(definitions) > 0
+    result = await db_session.execute(select(DetailModel))
+    details = result.scalars().all()
+    assert len(details) > 0
 
-    cat_ids_result = await db_session.execute(select(CategoryModel.id))
-    valid_ids = {row[0] for row in cat_ids_result.all()}
+    group_ids_result = await db_session.execute(select(GroupModel.id))
+    valid_ids = {row[0] for row in group_ids_result.all()}
 
-    for defn in definitions:
-        assert defn.category_id in valid_ids, (
-            f"Definition {defn.id} references unknown category '{defn.category_id}'"
+    for detail in details:
+        assert detail.group_id in valid_ids, (
+            f"Detail {detail.id} references unknown group '{detail.group_id}'"
         )
 
 
@@ -102,18 +102,18 @@ async def test_seed_file_matches_backup_schema(db_session: AsyncSession):
     payload = _load_seed()
 
     assert "version" in payload
-    assert "categories" in payload
-    assert "terms" in payload
+    assert "groups" in payload
+    assert "items" in payload
     assert payload["version"] == 1
 
-    for cat in payload["categories"]:
-        assert "id" in cat
-        assert "label" in cat
-        assert "parent_id" in cat
+    for grp in payload["groups"]:
+        assert "id" in grp
+        assert "label" in grp
+        assert "parent_id" in grp
 
-    for term in payload["terms"]:
-        assert "term" in term
-        assert "definitions" in term
-        for d in term["definitions"]:
-            assert "en" in d
-            assert "category_id" in d
+    for item in payload["items"]:
+        assert "name" in item
+        assert "details" in item
+        for d in item["details"]:
+            assert "description" in d
+            assert "group_id" in d

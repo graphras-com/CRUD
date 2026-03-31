@@ -7,17 +7,17 @@ with your own domain-specific validation models.
 from pydantic import BaseModel, Field
 
 # ---------------------------------------------------------------------------
-# Category
+# Group
 # ---------------------------------------------------------------------------
 
 
-class CategoryCreate(BaseModel):
-    id: str = Field(..., min_length=1, examples=["network.mobile"])
-    parent_id: str | None = Field(None, examples=["network"])
-    label: str = Field(..., min_length=1, examples=["Mobile"])
+class GroupCreate(BaseModel):
+    id: str = Field(..., min_length=1, examples=["engineering.backend"])
+    parent_id: str | None = Field(None, examples=["engineering"])
+    label: str = Field(..., min_length=1, examples=["Backend"])
 
 
-class CategoryRead(BaseModel):
+class GroupRead(BaseModel):
     id: str
     parent_id: str | None
     label: str
@@ -25,77 +25,57 @@ class CategoryRead(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class CategoryUpdate(BaseModel):
+class GroupUpdate(BaseModel):
     parent_id: str | None = None
     label: str | None = Field(None, min_length=1)
 
 
 # ---------------------------------------------------------------------------
-# Definition
+# Detail
 # ---------------------------------------------------------------------------
 
 
-class DefinitionCreate(BaseModel):
-    en: str = Field(..., min_length=1)
-    da: str | None = Field(None, min_length=1)
-    category_id: str = Field(..., min_length=1)
+class DetailCreate(BaseModel):
+    description: str = Field(..., min_length=1)
+    notes: str | None = Field(None, min_length=1)
+    group_id: str = Field(..., min_length=1)
 
 
-class DefinitionRead(BaseModel):
+class DetailRead(BaseModel):
     id: int
-    en: str
-    da: str | None
-    category_id: str
+    description: str
+    notes: str | None
+    group_id: str
 
     model_config = {"from_attributes": True}
 
 
-class DefinitionUpdate(BaseModel):
-    en: str | None = Field(None, min_length=1)
-    da: str | None = None
-    category_id: str | None = Field(None, min_length=1)
-
-
-class DefinitionRecommendRequest(BaseModel):
-    term: str = Field(..., min_length=1)
-    category_id: str | None = Field(None, min_length=1)
-
-
-class DefinitionRecommendResponse(BaseModel):
-    en: str
-    da: str
-    model: str
+class DetailUpdate(BaseModel):
+    description: str | None = Field(None, min_length=1)
+    notes: str | None = None
+    group_id: str | None = Field(None, min_length=1)
 
 
 # ---------------------------------------------------------------------------
-# Glossary extraction from free text
+# Item
 # ---------------------------------------------------------------------------
 
 
-class GlossaryExtractRequest(BaseModel):
-    text: str = Field(..., min_length=1, max_length=50000)
+class ItemCreate(BaseModel):
+    name: str = Field(..., min_length=1)
+    details: list[DetailCreate] = Field(..., min_length=1)
 
 
-# ---------------------------------------------------------------------------
-# Term
-# ---------------------------------------------------------------------------
-
-
-class TermCreate(BaseModel):
-    term: str = Field(..., min_length=1)
-    definitions: list[DefinitionCreate] = Field(..., min_length=1)
-
-
-class TermRead(BaseModel):
+class ItemRead(BaseModel):
     id: int
-    term: str
-    definitions: list[DefinitionRead]
+    name: str
+    details: list[DetailRead]
 
     model_config = {"from_attributes": True}
 
 
-class TermUpdate(BaseModel):
-    term: str | None = Field(None, min_length=1)
+class ItemUpdate(BaseModel):
+    name: str | None = Field(None, min_length=1)
 
 
 # ---------------------------------------------------------------------------
@@ -103,18 +83,18 @@ class TermUpdate(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class BackupDefinition(BaseModel):
-    en: str
-    da: str | None = None
-    category_id: str
+class BackupDetail(BaseModel):
+    description: str
+    notes: str | None = None
+    group_id: str
 
 
-class BackupTerm(BaseModel):
-    term: str
-    definitions: list[BackupDefinition]
+class BackupItem(BaseModel):
+    name: str
+    details: list[BackupDetail]
 
 
-class BackupCategory(BaseModel):
+class BackupGroup(BaseModel):
     id: str
     parent_id: str | None = None
     label: str
@@ -122,5 +102,5 @@ class BackupCategory(BaseModel):
 
 class BackupPayload(BaseModel):
     version: int = 1
-    categories: list[BackupCategory]
-    terms: list[BackupTerm]
+    groups: list[BackupGroup]
+    items: list[BackupItem]

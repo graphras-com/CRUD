@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Glossary application is a full-stack web application with a clear separation between a **generic CRUD framework** (`app/`) and **domain-specific code** (`resources/`). The backend is a FastAPI application with async SQLAlchemy. The frontend is a React 19 SPA that auto-generates CRUD pages from a resource configuration file.
+The CRUD Template application is a full-stack web application with a clear separation between a **generic CRUD framework** (`app/`) and **domain-specific code** (`resources/`). The backend is a FastAPI application with async SQLAlchemy. The frontend is a React 19 SPA that auto-generates CRUD pages from a resource configuration file.
 
 ## Repository Structure
 
@@ -22,16 +22,13 @@ The Glossary application is a full-stack web application with a clear separation
 │   │   ├── backup.py           # Generic backup/restore router
 │   │   └── seed.py             # Generic seed-from-JSON logic
 │   ├── routers/                # Empty (legacy; routers are now auto-generated)
-│   └── services/
-│       └── openai_recommendation.py  # OpenAI API client for AI definitions
+│   └── services/               # Application services (empty in template)
 │
 ├── resources/                  # Domain-specific declarations
 │   ├── config.py               # Resource registry (single source of truth for backend)
-│   ├── models.py               # SQLAlchemy ORM models (Category, Term, Definition)
+│   ├── models.py               # SQLAlchemy ORM models (Group, Item, Detail)
 │   ├── schemas.py              # Pydantic request/response schemas
-│   └── routers/
-│       ├── recommend.py        # POST /terms/recommend-definition
-│       └── extract_glossary.py # POST /terms/extract-glossary
+│   └── routers/                # Custom routers (empty in template)
 │
 ├── frontend/
 │   ├── src/
@@ -55,14 +52,11 @@ The Glossary application is a full-stack web application with a clear separation
 │   │   │   ├── ConfirmButton.jsx
 │   │   │   ├── ErrorMessage.jsx
 │   │   │   └── VersionBar.jsx
-│   │   ├── pages/              # Page components (some override generic CRUD pages)
-│   │   ├── hooks/              # Custom React hooks
-│   │   ├── pdf/                # Client-side PDF generation
-│   │   └── prompts/            # Static prompt text files
+│   │   └── pages/              # Page components (can override generic CRUD pages)
 │   └── e2e/                    # Playwright end-to-end tests
 │
 ├── tests/                      # Backend pytest suite (async, in-memory SQLite)
-├── base_data_import/           # glossary-seed.json (seed data)
+├── base_data_import/           # seed.json (seed data)
 ├── alembic/                    # Database migrations (PostgreSQL only)
 ├── k8s/                        # Kubernetes manifests (staging/ and production/)
 ├── .github/                    # GitHub Actions CI workflows
@@ -81,7 +75,7 @@ The core design principle is that the `app/` directory contains a reusable CRUD 
 
 2. **Auto-Generated Routers**: On startup, `app/main.py` iterates over the resource registry and calls `create_crud_router()` for each resource. This generates LIST, GET, CREATE, UPDATE, and DELETE endpoints automatically.
 
-3. **Nested Resources**: Resources with children (e.g., Terms with Definitions) also get nested routers via `create_nested_crud_router()` for creating, updating, and deleting child records under the parent URL.
+3. **Nested Resources**: Resources with children (e.g., Items with Details) also get nested routers via `create_nested_crud_router()` for creating, updating, and deleting child records under the parent URL.
 
 4. **Backup/Restore**: A single generic backup router handles serialization and deserialization of all registered resources, including self-referencing FK topological ordering and parent-child inline embedding.
 
@@ -95,7 +89,7 @@ resources/config.py (ResourceRegistry)
         ├── create_crud_router()       → GET/POST/PATCH/DELETE /{resource}/
         ├── create_nested_crud_router() → POST/PATCH/DELETE /{parent}/{pk}/{child}/
         ├── create_backup_router()      → GET /backup/ + POST /backup/restore
-        └── _load_custom_routers()      → domain-specific routers (recommend, extract)
+        └── _load_custom_routers()      → domain-specific routers (if any)
 ```
 
 ### Frontend Flow
@@ -110,28 +104,28 @@ config/resources.js
 
 ## Data Model
 
-The glossary domain has three entities:
+The template ships with three example entities:
 
 ```
-CategoryModel (PK: string id, dot-notation)
-  ├── parent_id → CategoryModel (self-referencing hierarchy)
+GroupModel (PK: string id, dot-notation)
+  ├── parent_id → GroupModel (self-referencing hierarchy)
   ├── label: string
-  └── definitions: [DefinitionModel] (reverse relationship)
+  └── details: [DetailModel] (reverse relationship)
 
-TermModel (PK: auto-increment integer)
-  ├── term: string (unique, indexed)
-  └── definitions: [DefinitionModel] (cascade delete-orphan)
+ItemModel (PK: auto-increment integer)
+  ├── name: string (unique, indexed)
+  └── details: [DetailModel] (cascade delete-orphan)
 
-DefinitionModel (PK: auto-increment integer)
-  ├── term_id → TermModel (FK, CASCADE delete)
-  ├── en: text (required)
-  ├── da: text (optional)
-  └── category_id → CategoryModel (FK)
+DetailModel (PK: auto-increment integer)
+  ├── item_id → ItemModel (FK, CASCADE delete)
+  ├── description: text (required)
+  ├── notes: text (optional)
+  └── group_id → GroupModel (FK)
 ```
 
-A term can have multiple definitions, each belonging to a different category.
+An item can have multiple details, each belonging to a different group.
 
-Categories use a string primary key with dot-notation for hierarchy (e.g., `network`, `network.mobile`, `network.access`). The `parent_id` field creates a self-referencing tree structure.
+Groups use a string primary key with dot-notation for hierarchy (e.g., `engineering`, `engineering.backend`, `engineering.frontend`). The `parent_id` field creates a self-referencing tree structure.
 
 ## Database
 
@@ -148,19 +142,11 @@ Authentication uses Microsoft Entra ID (Azure AD):
 
 - **Frontend**: MSAL.js v2 with Authorization Code Flow + PKCE. Tokens stored in memory only. The `AuthProvider` and `RequireAuth` components wrap the entire app.
 - **Backend**: JWT validation via PyJWT with JWKS fetched from Microsoft's discovery endpoint. The `require_auth` FastAPI dependency is applied to all generated CRUD routers.
-- **RBAC**: Three app roles (`Glossary.Admin`, `Glossary.Editor`, `Glossary.Reader`) defined in Entra. The `require_role()` and `require_scope()` dependencies enforce access control.
+- **RBAC**: App roles (e.g. `App.Admin`, `App.Editor`, `App.Reader`) defined in Entra. The `require_role()` and `require_scope()` dependencies enforce access control.
 - **Dev bypass**: Set `AUTH_DISABLED=true` (backend) and `VITE_AUTH_DISABLED=true` (frontend) to skip authentication entirely during local development.
 
 See [Authentication](authentication.md) for full setup instructions.
 
 ## Custom Endpoints
 
-Beyond the auto-generated CRUD, the glossary application has two custom routers:
-
-### AI Definition Recommendation (`POST /terms/recommend-definition`)
-
-Calls an OpenAI-compatible API to generate English and Danish definition suggestions for a given term. Optionally accepts a `category_id` for context (walks the category parent chain to build a breadcrumb string for the prompt).
-
-### Glossary Extraction (`POST /terms/extract-glossary`)
-
-Accepts a block of free text and returns all existing glossary terms whose names appear in the text. Uses word-boundary regex matching (case-insensitive). No AI is involved.
+The template ships with no custom endpoints. The `resources/routers/` directory is where you add domain-specific endpoints beyond the auto-generated CRUD. See [Development](development.md) for instructions on adding custom endpoints.

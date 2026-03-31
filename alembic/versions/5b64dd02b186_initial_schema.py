@@ -20,40 +20,40 @@ depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:
-    """Create initial tables: categories, terms, definitions."""
+    """Create initial tables: groups, items, details."""
     op.create_table(
-        "categories",
+        "groups",
         sa.Column("id", sa.String(100), primary_key=True),
         sa.Column(
             "parent_id",
             sa.String(100),
-            sa.ForeignKey("categories.id"),
+            sa.ForeignKey("groups.id"),
             nullable=True,
         ),
         sa.Column("label", sa.String(200), nullable=False),
     )
 
     op.create_table(
-        "terms",
+        "items",
         sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
-        sa.Column("term", sa.String(300), nullable=False, unique=True, index=True),
+        sa.Column("name", sa.String(300), nullable=False, unique=True, index=True),
     )
 
     op.create_table(
-        "definitions",
+        "details",
         sa.Column("id", sa.Integer, primary_key=True, autoincrement=True),
         sa.Column(
-            "term_id",
+            "item_id",
             sa.Integer,
-            sa.ForeignKey("terms.id", ondelete="CASCADE"),
+            sa.ForeignKey("items.id", ondelete="CASCADE"),
             nullable=False,
         ),
-        sa.Column("en", sa.Text, nullable=False),
-        sa.Column("da", sa.Text, nullable=True),
+        sa.Column("description", sa.Text, nullable=False),
+        sa.Column("notes", sa.Text, nullable=True),
         sa.Column(
-            "category_id",
+            "group_id",
             sa.String(100),
-            sa.ForeignKey("categories.id"),
+            sa.ForeignKey("groups.id"),
             nullable=False,
         ),
     )
@@ -61,6 +61,6 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Drop all tables."""
-    op.drop_table("definitions")
-    op.drop_table("terms")
-    op.drop_table("categories")
+    op.drop_table("details")
+    op.drop_table("items")
+    op.drop_table("groups")

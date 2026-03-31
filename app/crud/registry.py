@@ -17,10 +17,10 @@ from sqlalchemy.orm import DeclarativeBase
 
 @dataclass
 class ChildResourceConfig:
-    """Config for a child resource nested under a parent (e.g. definitions under terms)."""
+    """Config for a child resource nested under a parent (e.g. details under items)."""
 
     name: str
-    """URL path segment and tag, e.g. ``"definitions"``."""
+    """URL path segment and tag, e.g. ``"details"``."""
 
     model: type[DeclarativeBase]
     """SQLAlchemy model class."""
@@ -36,13 +36,13 @@ class ChildResourceConfig:
     """Python type of the primary key (``int`` or ``str``)."""
 
     parent_fk: str = ""
-    """Column on the child model that references the parent PK, e.g. ``"term_id"``."""
+    """Column on the child model that references the parent PK, e.g. ``"item_id"``."""
 
     fk_validations: dict[str, type[DeclarativeBase]] = field(default_factory=dict)
     """Mapping of child fields to model classes that must exist.
 
-    Example: ``{"category_id": CategoryModel}`` — before creating or
-    updating a child row the framework will verify the referenced category
+    Example: ``{"group_id": GroupModel}`` — before creating or
+    updating a child row the framework will verify the referenced group
     exists and return 422 otherwise.
     """
 
@@ -58,7 +58,7 @@ class ResourceConfig:
     """Declarative configuration for a top-level CRUD resource."""
 
     name: str
-    """URL prefix and tag, e.g. ``"categories"`` → ``/categories``."""
+    """URL prefix and tag, e.g. ``"groups"`` → ``/groups``."""
 
     model: type[DeclarativeBase]
     """SQLAlchemy model class."""
@@ -89,8 +89,8 @@ class ResourceConfig:
     """Query-parameter filters through child relationships.
 
     Keys are query-param names, values are ``"ChildModel.column"`` dot-paths.
-    Example: ``{"category": "definitions.category_id"}`` enables
-    ``GET /terms?category=network``.
+    Example: ``{"group": "details.group_id"}`` enables
+    ``GET /items?group=engineering``.
     """
 
     fk_validations: dict[str, type[DeclarativeBase]] = field(default_factory=dict)
@@ -118,13 +118,13 @@ class ResourceConfig:
 
     backup_children_field: str = ""
     """When set, backup serialisation nests child rows under this field
-    on each parent record.  Example: ``"definitions"`` on the terms
-    resource means each backup term carries its definitions inline.
+    on each parent record.  Example: ``"details"`` on the items
+    resource means each backup item carries its details inline.
     """
 
     self_referencing_fk: str = ""
     """Column name of a self-referencing FK (e.g. ``"parent_id"`` on
-    categories).  The backup restore performs topological insertion to
+    groups).  The backup restore performs topological insertion to
     respect this constraint.
     """
 

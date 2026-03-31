@@ -13,12 +13,12 @@
  *   submitLabel  — button label (defaults to "Create" or "Save Changes")
  *   title        — page heading
  *   children     — optional React nodes rendered before the form actions
- *                   (e.g. "Recommend definition" button)
+ *                   (e.g. extra action buttons)
  */
 
 import { useState } from "react";
 import ErrorMessage from "./ErrorMessage";
-import useCategoryMap from "../hooks/useCategoryMap";
+import useSelectSource from "../hooks/useSelectSource";
 
 export default function CrudForm({
   resource,
@@ -30,7 +30,7 @@ export default function CrudForm({
   title,
   children: extraContent,
 }) {
-  const { categories, breadcrumb: categoryBreadcrumb } = useCategoryMap();
+  const { getItems: getSourceItemsAll, breadcrumb } = useSelectSource();
 
   // Build initial form state from fields
   const formFields = resource.fields.filter((f) => {
@@ -161,12 +161,13 @@ export default function CrudForm({
    * Get source items for select fields.
    */
   function getSourceItems(field) {
-    if (field.source === "categories") {
-      // For category edit: exclude self to prevent circular references
-      if (resource.name === "categories" && mode === "edit" && initialData.id) {
-        return categories.filter((c) => c.id !== initialData.id);
+    if (field.source) {
+      const items = getSourceItemsAll(field.source);
+      // For self-referencing resources: exclude self to prevent circular references
+      if (field.source === resource.name && mode === "edit" && initialData.id) {
+        return items.filter((item) => item.id !== initialData.id);
       }
-      return categories;
+      return items;
     }
     return [];
   }
@@ -203,9 +204,9 @@ export default function CrudForm({
             {sourceItems.map((item) => (
               <option key={item.id} value={item.id}>
                 {field.sourceLabel
-                  ? field.sourceLabel(item, categoryBreadcrumb)
-                  : field.source === "categories"
-                  ? categoryBreadcrumb(item.id)
+                  ? field.sourceLabel(item, (id) => breadcrumb(field.source, id))
+                  : field.source
+                  ? breadcrumb(field.source, item.id)
                   : item.label || item.id}
               </option>
             ))}
@@ -303,7 +304,7 @@ export default function CrudForm({
                           )}
                         </div>
                       ))}
-                      {/* Slot for extra per-child actions (e.g., "Recommend") */}
+                      {/* Slot for extra per-child actions */}
                       {typeof extraContent === "function"
                         ? extraContent({
                             childName: childCfg.name,

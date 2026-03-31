@@ -33,8 +33,8 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/categories': { target: 'http://localhost:8000', bypass: apiOnly },
-      '/terms':      { target: 'http://localhost:8000', bypass: apiOnly },
+      '/groups':     { target: 'http://localhost:8000', bypass: apiOnly },
+      '/items':      { target: 'http://localhost:8000', bypass: apiOnly },
       '/backup':     { target: 'http://localhost:8000', bypass: apiOnly },
       '/health':     { target: 'http://localhost:8000', bypass: apiOnly },
     },

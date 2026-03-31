@@ -13,7 +13,7 @@ The backup format is::
     }
 
 Resources that declare :attr:`ResourceConfig.backup_children_field` will
-embed their child rows inline (matching the current Glossary backup
+embed their child rows inline (matching the expected backup
 format).  Resources with :attr:`ResourceConfig.self_referencing_fk` are
 restored with topological insertion order.
 """
@@ -58,7 +58,7 @@ def create_backup_router(
             rows = (await db.execute(select(rc.model))).scalars().all()
 
             if rc.backup_children_field and rc.children:
-                # Embed children inline (e.g. terms with definitions)
+                # Embed children inline (e.g. items with details)
                 child_cfg = rc.children[0]  # primary child
                 serialised = []
                 for row in rows:

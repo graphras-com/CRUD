@@ -18,7 +18,7 @@ _TEST_USER = TokenPayload(
     oid="00000000-0000-0000-0000-000000000001",
     tid="test-tenant-id",
     scopes=["access_as_user"],
-    roles=["Glossary.Admin"],
+    roles=["App.Admin"],
     raw={},
 )
 
@@ -78,39 +78,39 @@ async def client(engine):
 
 
 @pytest.fixture()
-async def seed_categories(client: AsyncClient) -> list[dict]:
-    """Create a small set of categories and return their response bodies."""
-    categories = [
-        {"id": "network", "parent_id": None, "label": "Network"},
-        {"id": "network.mobile", "parent_id": "network", "label": "Mobile"},
-        {"id": "network.access", "parent_id": "network", "label": "Access"},
-        {"id": "commercial", "parent_id": None, "label": "Commercial"},
+async def seed_groups(client: AsyncClient) -> list[dict]:
+    """Create a small set of groups and return their response bodies."""
+    groups = [
+        {"id": "engineering", "parent_id": None, "label": "Engineering"},
+        {"id": "engineering.backend", "parent_id": "engineering", "label": "Backend"},
+        {"id": "engineering.frontend", "parent_id": "engineering", "label": "Frontend"},
+        {"id": "operations", "parent_id": None, "label": "Operations"},
     ]
     results = []
-    for cat in categories:
-        r = await client.post("/categories/", json=cat)
+    for grp in groups:
+        r = await client.post("/groups/", json=grp)
         assert r.status_code == 201
         results.append(r.json())
     return results
 
 
 @pytest.fixture()
-async def seed_term(client: AsyncClient, seed_categories) -> dict:
-    """Create a single term with two definitions and return its response body."""
+async def seed_item(client: AsyncClient, seed_groups) -> dict:
+    """Create a single item with two details and return its response body."""
     payload = {
-        "term": "LTE",
-        "definitions": [
+        "name": "Widget",
+        "details": [
             {
-                "en": "Long Term Evolution",
-                "da": "Long Term Evolution (dansk)",
-                "category_id": "network.mobile",
+                "description": "A reusable component",
+                "notes": "Used in production",
+                "group_id": "engineering.backend",
             },
             {
-                "en": "A 4G radio access technology",
-                "category_id": "network",
+                "description": "An alternative implementation",
+                "group_id": "engineering",
             },
         ],
     }
-    r = await client.post("/terms/", json=payload)
+    r = await client.post("/items/", json=payload)
     assert r.status_code == 201
     return r.json()

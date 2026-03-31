@@ -35,9 +35,9 @@ export default function Login() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <h1>Telecom Glossary</h1>
+        <h1>CRUD App</h1>
         <p>
-          Sign in with your company Microsoft account to access the glossary.
+          Sign in with your company Microsoft account to access the application.
         </p>
         {error && <div className="error-message">{error}</div>}
         <button className="btn btn-primary btn-login" onClick={handleLogin}>
