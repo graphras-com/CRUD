@@ -58,9 +58,7 @@ The CRUD Template application is a full-stack web application with a clear separ
 ├── tests/                      # Backend pytest suite (async, in-memory SQLite)
 ├── base_data_import/           # seed.json (seed data)
 ├── alembic/                    # Database migrations (PostgreSQL only)
-├── k8s/                        # Kubernetes manifests (staging/ and production/)
-├── .github/                    # GitHub Actions CI workflows
-├── .woodpecker/                # Woodpecker CD pipelines
+├── .github/                    # GitHub Actions CI/CD workflows
 ├── Dockerfile                  # Multi-stage build (Node + Python)
 └── docker-compose.yml          # Single-service compose with SQLite volume
 ```

@@ -28,17 +28,6 @@ Set any of these optional variables:
 
 - `GITLEAKS_LICENSE` is optional. If not set, the gitleaks step still runs with default behavior.
 
-## Required GitHub secrets for staging deploy trigger
-
-To trigger Woodpecker staging deploy only after image push succeeds, set these GitHub Actions secrets:
-
-- `WOODPECKER_SERVER` (example: `https://ci.example.com`)
-- `WOODPECKER_TOKEN` (Woodpecker PAT)
-- `WOODPECKER_REPO` (optional override, default is GitHub `owner/repo`)
-- `WOODPECKER_REPO_ID` (optional numeric repo id, recommended to skip lookup)
-
-If `WOODPECKER_SERVER` or `WOODPECKER_TOKEN` is not set, the GitHub trigger job is skipped.
-
 ## Auto-detection behavior
 
 The CI workflow detects project components and only runs relevant jobs:
@@ -67,28 +56,28 @@ The CI workflow detects project components and only runs relevant jobs:
    - Frontend at `frontend/` (or override with `CI_FRONTEND_WORKDIR`).
    - `Dockerfile` at root for Docker jobs.
 
-## Woodpecker deploy templates
+## Deploy workflows
 
-The Woodpecker deploy pipelines in `.woodpecker/deploy-staging.yml` and `.woodpecker/deploy-production.yml` are template-ready and derive naming from repo/org by default.
+The deploy workflows in `.github/workflows/deploy-staging.yml` and `.github/workflows/deploy-production.yml` are template-ready and derive naming from repo/org by default.
 
 - Staging namespace: `<org-prefix>-staging` (example: `graphras-staging`)
 - Production namespace: `<org-prefix>-prod` (example: `graphras-prod`)
 - Container image: `ghcr.io/<org-ghcr>/<app-name>:<tag>`
 - Staging host: `staging-<app-name>.<org-dns>`
 - Production host: `<app-name>.<org-dns>`
-- Staging deploy image tag: `staging` (published by GitHub Actions on `main` pushes)
-- Production deploy image tag: release tag from CI (`CI_COMMIT_TAG`)
+- Staging deploy image tag: `staging` (published on `main` pushes)
+- Production deploy image tag: release tag (e.g. `1.2.3` from `v1.2.3`)
 
 Trigger behavior:
 
-- Staging deploy workflow runs on manual/API trigger only.
-- GitHub Actions triggers staging after `docker-push` succeeds on `main`.
-- This avoids race conditions between forge push events and image publication timing.
+- Staging deploy runs via `workflow_call` from `ci.yml` after `docker-push` succeeds on `main`, or via `workflow_dispatch` (manual).
+- Production deploy runs via `workflow_call` from `ci.yml` after `docker-push` succeeds on a `v*` tag push, or via `workflow_dispatch`.
+- All deploy secrets are configured in GitHub Actions environments (`staging` and `production`).
 
-Optional Woodpecker environment overrides:
+Optional environment variable overrides (set in GitHub Actions environment secrets):
 
 - `APP_NAME` (default: repository name)
-- `ORG_GHCR` (default: GitHub org slug from CI, e.g. `graphras-com`)
+- `ORG_GHCR` (default: GitHub org slug, e.g. `graphras-com`)
 - `ORG_DNS` (default heuristic from `ORG_GHCR`, e.g. `graphras.com`)
 - `ORG_NS` (default: `ORG_GHCR` stripped of common TLD suffixes, e.g. `graphras`)
 

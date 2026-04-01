@@ -12,6 +12,7 @@ COPY frontend/ ./
 ARG VITE_CLIENT_ID=""
 ARG VITE_TENANT_ID=""
 ARG VITE_API_SCOPE=""
+ARG VITE_AUTHORITY=""
 
 # Build metadata — injected by CI/CD or docker build.
 ARG VITE_BUILD_COMMIT=""

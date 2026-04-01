@@ -62,6 +62,7 @@ jobs:
             VITE_CLIENT_ID=${{ vars.VITE_CLIENT_ID || '' }}
             VITE_TENANT_ID=${{ vars.VITE_TENANT_ID || '' }}
             VITE_API_SCOPE=${{ vars.VITE_API_SCOPE || '' }}
+            VITE_AUTHORITY=${{ vars.VITE_AUTHORITY || '' }}
             VITE_BUILD_COMMIT=${{ github.sha }}
             VITE_BUILD_TAG=${{ github.ref_type == 'tag' && github.ref_name || '' }}
             VITE_BUILD_BRANCH=${{ github.ref_name }}

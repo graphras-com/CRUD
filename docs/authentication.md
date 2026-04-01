@@ -289,7 +289,7 @@ Note: the Vite env vars (`VITE_CLIENT_ID`, etc.) are baked into the frontend at 
 
 ## Kubernetes Deployment
 
-Auth environment variables are supplied via a ConfigMap generated inline by the Woodpecker CD pipelines:
+Auth environment variables are supplied via a ConfigMap generated inline by the GitHub Actions CD workflows:
 
 ```yaml
 data:

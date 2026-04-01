@@ -1,5 +1,3 @@
-[![status-badge](https://ci.graphras.com/api/badges/1/status.svg?events=push%2Ctag%2Crelease%2Cpull_request%2Cdeployment%2Cmanual)](https://ci.graphras.com/repos/1)
-
 # CRUD Template
 
 A full-stack generic CRUD application template. Define your entities in configuration files and the framework auto-generates backend routers, API client functions, and frontend pages.
@@ -25,7 +23,7 @@ A full-stack generic CRUD application template. Define your entities in configur
 | Testing    | pytest, Vitest, Playwright                               |
 | Packaging  | uv (Python), npm (Node)                                  |
 | Container  | Docker (multi-stage, multi-platform) + Docker Compose    |
-| CI/CD      | GitHub Actions + Woodpecker CI                           |
+| CI/CD      | GitHub Actions                                           |
 | Deployment | Kubernetes (k3s) with Traefik + CloudNativePG            |
 
 ## Quick Start

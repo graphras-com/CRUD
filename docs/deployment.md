@@ -95,16 +95,17 @@ push/PR to main
   +-- docker-build   (PR only: build without push)
   +-- docker-push    (main/tags: build + push to ghcr.io)
   |
-  +-- trigger-staging-deploy  (main only: triggers Woodpecker)
-  +-- release                 (tags only: creates GitHub release)
+  +-- deploy-staging   (main only: deploy to staging K8s)
+  +-- release          (tags only: creates GitHub release)
+  +-- deploy-production (tags only: deploy to production K8s)
 ```
 
 ### Triggers
 
 | Event          | What happens                                      |
 |----------------|---------------------------------------------------|
-| Push to `main` | Full CI + Docker push + trigger staging deploy     |
-| Push tag `v*`  | Full CI + Docker push + GitHub release             |
+| Push to `main` | Full CI + Docker push + deploy to staging       |
+| Push tag `v*`  | Full CI + Docker push + GitHub release + deploy to production |
 | Pull request   | Full CI + Docker build (no push)                   |
 | Release        | Full CI + Docker push                              |
 | Manual         | Full CI                                            |
@@ -147,6 +148,8 @@ The `.github/workflows/` directory contains reusable workflows called by `ci.yml
 | `frontend-unit.yml`     | Vitest unit tests                    |
 | `frontend-e2e.yml`      | Playwright E2E tests                 |
 | `build-and-push.yml`    | Docker build + optional push         |
+| `deploy-staging.yml`    | Deploy to staging Kubernetes         |
+| `deploy-production.yml` | Deploy to production Kubernetes      |
 | `python-gitleaks.yml`   | Secret scanning with gitleaks        |
 | `python-release.yml`    | GitHub release creation              |
 
@@ -154,13 +157,15 @@ See `TEMPLATE_WORKFLOWS.md` and `.github/workflows/README.md` for detailed docum
 
 ---
 
-## CD -- Woodpecker CI
+## CD -- GitHub Actions
 
-Continuous deployment to Kubernetes is handled by Woodpecker CI pipelines in `.woodpecker/`.
+Continuous deployment to Kubernetes is handled by GitHub Actions workflows in `.github/workflows/`.
+
+Deploy workflows use GitHub Actions [environments](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) (`staging` and `production`) for secret isolation and optional approval gates.
 
 ### Staging (`deploy-staging.yml`)
 
-**Trigger:** manually triggered by the GitHub Actions `trigger-staging-deploy` job after a successful push to `main`.
+**Trigger:** automatically called by `ci.yml` after a successful Docker push on `main`. Can also be triggered manually via `workflow_dispatch`.
 
 **What it does:**
 
@@ -171,8 +176,8 @@ Continuous deployment to Kubernetes is handled by Woodpecker CI pipelines in `.w
    - `ORG_DNS` from org name (e.g. `graphras-com` becomes `graphras.com`)
    - `NAMESPACE` = `{org}-staging`
    - `HOST` = `staging-{app}.{org-dns}`
-3. Determines the image tag: `sha-<7chars>` from `SOURCE_COMMIT_SHA` (passed by the GitHub Actions trigger), falling back to `staging`.
-4. Creates/updates all Kubernetes resources inline (not from template files):
+3. Determines the image tag: `sha-<7chars>` from the source commit SHA.
+4. Creates/updates all Kubernetes resources inline:
    - Namespace
    - GHCR image pull secret
    - CloudNativePG `Database` resource (in `default` namespace, shared `pg` cluster)
@@ -181,11 +186,11 @@ Continuous deployment to Kubernetes is handled by Woodpecker CI pipelines in `.w
    - Deployment (1 replica, startup/readiness/liveness probes on `/health`, resource limits)
    - Service (port 80 -> 8000)
    - Ingress (Traefik with TLS)
-5. Restarts the deployment and waits for rollout (180s timeout).
+5. Waits for rollout (180s timeout).
 
 ### Production (`deploy-production.yml`)
 
-**Trigger:** Woodpecker tag event (triggered when a `v*` tag is pushed).
+**Trigger:** automatically called by `ci.yml` after a successful Docker push on a `v*` tag. Can also be triggered manually via `workflow_dispatch` with an explicit image tag.
 
 **Differences from staging:**
 
@@ -193,13 +198,13 @@ Continuous deployment to Kubernetes is handled by Woodpecker CI pipelines in `.w
 |--------------|----------------------------------|-------------------------------|
 | Namespace    | `{org}-staging`                  | `{org}-prod`                  |
 | Host         | `staging-{app}.{org-dns}`        | `{app}.{org-dns}`             |
-| Image tag    | `sha-<7chars>` from commit SHA   | `CI_COMMIT_TAG` (e.g. `v1.2.3`) |
+| Image tag    | `sha-<7chars>` from commit SHA   | Semver from git tag (e.g. `1.2.3`) |
 | DB name      | `{app}_staging`                  | `{app}_prod`                  |
-| Trigger      | Manual via GitHub Actions        | Tag event                     |
+| Environment  | `staging`                        | `production`                  |
 
-The production pipeline does **not** restart the deployment explicitly -- it relies on the image tag change to trigger a rollout.
+### Required Secrets (GitHub Actions)
 
-### Required Secrets (Woodpecker)
+Deploy secrets should be configured in GitHub Actions [environments](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) (`staging` and `production`):
 
 | Secret             | Purpose                                      |
 |--------------------|----------------------------------------------|
@@ -207,15 +212,13 @@ The production pipeline does **not** restart the deployment explicitly -- it rel
 | `GHCR_USERNAME`    | GitHub username for pulling container images  |
 | `GHCR_TOKEN`       | GitHub PAT with `read:packages` scope         |
 | `K8S_API_SERVER`   | (Optional) Override k3s API server URL        |
+| `TENANT_ID`        | Azure AD tenant GUID (for backend auth)       |
+| `API_AUDIENCE`     | API app registration audience                 |
 
-### Required Secrets (GitHub Actions, for triggering Woodpecker)
+Additional repository-level secrets:
 
 | Secret              | Purpose                                    |
 |---------------------|--------------------------------------------|
-| `WOODPECKER_SERVER` | Woodpecker CI server URL                   |
-| `WOODPECKER_TOKEN`  | Woodpecker API token                       |
-| `WOODPECKER_REPO`   | (Optional) Override repo identifier         |
-| `WOODPECKER_REPO_ID`| (Optional) Override numeric repo ID         |
 | `GITLEAKS_LICENSE`  | (Optional) Gitleaks license key             |
 
 ---
@@ -246,10 +249,6 @@ The application runs on **k3s** with the following components:
   - Readiness: `GET /health`, 10s period
   - Liveness: `GET /health`, 30s period
 - **Resource limits:** 100m-500m CPU, 256Mi-512Mi memory
-
-### `k8s/` Directory
-
-The repository contains a `k8s/` directory with template manifests for staging and production. However, the Woodpecker pipelines generate all resources inline and do **not** use these files. The `k8s/` directory serves as reference documentation for the deployed resource structure.
 
 ---
 
@@ -286,4 +285,4 @@ SQLite deployments (local dev, Docker Compose) use `Base.metadata.create_all` on
    ```
 3. CI builds and pushes a Docker image tagged `1.2.3`, `1.2`, and `sha-<7chars>`.
 4. CI creates a GitHub release.
-5. Woodpecker detects the tag event and deploys to production.
+5. CI deploys to production via the `deploy-production` workflow.

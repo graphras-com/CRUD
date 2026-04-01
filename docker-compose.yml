@@ -6,6 +6,7 @@ services:
         VITE_CLIENT_ID: ""
         VITE_TENANT_ID: ""
         VITE_API_SCOPE: ""
+        VITE_AUTHORITY: ""
     ports:
       - "5173:8000"
     volumes:
