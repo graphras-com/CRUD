@@ -13,12 +13,12 @@
 
 import { LogLevel } from "@azure/msal-browser";
 
-const clientId = import.meta.env.VITE_CLIENT_ID ?? "";
-const tenantId = import.meta.env.VITE_TENANT_ID ?? "";
+const clientId = import.meta.env.VITE_CLIENT_ID || "";
+const tenantId = import.meta.env.VITE_TENANT_ID || "";
 const authority =
-  import.meta.env.VITE_AUTHORITY ??
+  import.meta.env.VITE_AUTHORITY ||
   `https://login.microsoftonline.com/${tenantId}`;
-const apiScope = import.meta.env.VITE_API_SCOPE ?? "";
+const apiScope = import.meta.env.VITE_API_SCOPE || "";
 
 /**
  * MSAL configuration object.
