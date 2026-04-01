@@ -7,6 +7,7 @@ domain entities and their relationships.
 
 from __future__ import annotations
 
+from importlib.metadata import version
 from pathlib import Path
 
 from app.crud.registry import ChildResourceConfig, ResourceConfig, ResourceRegistry
@@ -30,7 +31,7 @@ from resources.schemas import (
 # ---------------------------------------------------------------------------
 
 APP_TITLE = "CRUD API"
-APP_VERSION = "0.1.0"
+APP_VERSION = version("crud-template")
 
 # Role required for destructive operations (backup restore)
 ADMIN_ROLE = "App.Admin"

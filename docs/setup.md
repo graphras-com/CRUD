@@ -5,8 +5,48 @@
 - **Python 3.11+** with [uv](https://docs.astral.sh/uv/) package manager
 - **Node.js 22+** with npm
 - **Docker + Docker Compose** (optional, for containerized deployment)
+- **CUE CLI** (optional, for automated init) -- [install](https://cuelang.org/docs/install/)
+- **GitHub CLI** (optional, for automated init) -- [install](https://cli.github.com/)
 
-## Local Development
+## Automated Init (Recommended)
+
+The init script reads `config.cue` and sets up both local `.env` files and GitHub environment secrets/variables in one command.
+
+```bash
+# 1. Install dependencies
+uv sync
+
+# 2. Copy the config template and fill in your values
+cp config.cue.example config.cue
+# Edit config.cue with your auth, k8s, and GitHub details
+
+# 3. Authenticate with GitHub
+gh auth login
+
+# 4. Preview what will be created
+python scripts/init.py --dry-run
+
+# 5. Apply (creates environments, sets secrets/variables, generates .env files)
+python scripts/init.py
+```
+
+This creates:
+
+- `.env` -- backend environment variables (auth disabled for local dev)
+- `frontend/.env` -- frontend Vite environment variables
+- GitHub `staging` and `production` environments with all required secrets and variables
+
+To regenerate only the local `.env` files (no GitHub access needed):
+
+```bash
+python scripts/init.py --local-only
+```
+
+See [Configuration](configuration.md) for the full list of environment variables.
+
+## Manual Setup
+
+If you prefer not to use the init script, configure manually:
 
 ### 1. Clone and Configure
 
@@ -14,9 +54,10 @@
 git clone <repository-url>
 cd CRUD
 cp .env.example .env
+cp frontend/.env.example frontend/.env
 ```
 
-Edit `.env` as needed. The defaults work for local development with auth disabled:
+Edit `.env` and `frontend/.env` as needed. The defaults work for local development with auth disabled:
 
 ```env
 AUTH_DISABLED=true

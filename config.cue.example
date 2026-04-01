@@ -1,0 +1,72 @@
+// Application configuration for GitHub environments.
+//
+// Copy this file to config.cue and fill in your values:
+//
+//   cp config.cue.example config.cue
+//
+// Then run the init script to push secrets and variables to GitHub:
+//
+//   python scripts/init.py          # preview with --dry-run first
+//
+// This file is committed to the repository as a template.
+// config.cue is gitignored and must NEVER be committed (it contains secrets).
+
+app: {
+	name: "crud"
+}
+
+auth: {
+	TENANT_ID:     "your-tenant-id-here"
+	API_CLIENT_ID: "your-api-client-id-here"
+	SPA_CLIENT_ID: "your-spa-client-id-here"
+
+	API_AUDIENCE: "api://\(API_CLIENT_ID)"
+	API_SCOPE:    "\(API_AUDIENCE)/access_as_user"
+	AUTHORITY:    "https://login.microsoftonline.com/\(TENANT_ID)"
+}
+
+k8s: {
+	KUBECONFIG_B64: "<base64-encoded-kubeconfig>"
+}
+
+github: {
+	organization: "your-org"
+	repository:   "your-repo"
+
+	// Personal access token with write:packages scope.
+	// Used by deployment workflows to create image pull secrets on Kubernetes.
+	ghcr_username: "your-github-username"
+	ghcr_token:    "ghp_your-personal-access-token"
+
+	environment: {
+		staging: _envDefaults & {
+			// Per-environment overrides (merged on top of defaults)
+			variables: {
+				// VITE_API_SCOPE: "api://staging-api/access_as_user"
+			}
+		}
+
+		production: _envDefaults & {
+			// Per-environment overrides (merged on top of defaults)
+			variables: {
+				// VITE_CLIENT_ID: "different-prod-client-id"
+			}
+		}
+	}
+}
+
+_envDefaults: {
+	secrets: {
+		KUBECONFIG_B64: k8s.KUBECONFIG_B64
+		GHCR_USERNAME:  github.ghcr_username
+		GHCR_TOKEN:     github.ghcr_token
+		TENANT_ID:      auth.TENANT_ID
+		API_AUDIENCE:   auth.API_AUDIENCE
+	}
+
+	variables: {
+		VITE_CLIENT_ID: auth.SPA_CLIENT_ID
+		VITE_TENANT_ID: auth.TENANT_ID
+		VITE_API_SCOPE: auth.API_SCOPE
+	}
+}

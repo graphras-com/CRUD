@@ -53,6 +53,17 @@ npm run dev
 
 Open <http://localhost:5173>. The dev server proxies API calls to port 8000.
 
+### Automated Init (Optional)
+
+Configure local `.env` files and GitHub environments from a single `config.cue`:
+
+```bash
+cp config.cue.example config.cue    # fill in your values
+python scripts/init.py               # generates .env files + pushes GitHub secrets
+```
+
+See [Setup](docs/setup.md) for full details.
+
 ### Docker
 
 ```bash
