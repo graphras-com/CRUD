@@ -299,7 +299,7 @@ data:
   CORS_ALLOWED_ORIGINS: "https://<host>"
 ```
 
-Frontend auth env vars are baked into the Docker image at build time via `--build-arg` in the GitHub Actions `build-and-push` workflow.
+Frontend auth env vars are baked into the Docker image at build time. The `build-and-push` workflow reads `VITE_CLIENT_ID`, `VITE_TENANT_ID`, `VITE_API_SCOPE`, and `VITE_AUTHORITY` from the GitHub Actions environment (`staging` or `production`). Configure these under Settings > Environments > *environment name* > Variables.
 
 See [Deployment](deployment.md) for full pipeline details.
 
@@ -348,7 +348,7 @@ Check:
 ### Frontend shows "Initialising authentication..." forever
 
 **Cause:** MSAL initialization failed.
-**Fix:** Check browser console for errors. Usually `VITE_CLIENT_ID` or `VITE_TENANT_ID` is wrong or empty.
+**Fix:** Check browser console for errors. Usually `VITE_CLIENT_ID` or `VITE_TENANT_ID` is wrong or empty. For deployed environments, verify these are set as variables in the GitHub Actions environment (`staging` or `production`).
 
 ### Tests fail with `401` after adding auth
 

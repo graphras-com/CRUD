@@ -119,7 +119,7 @@ push/PR to main
   - `main` branch: tagged as `staging` and `sha-<7chars>`
   - Semver tags: `v1.2.3` produces `1.2.3`, `1.2`, and `sha-<7chars>`
 - **Cache:** GitHub Actions cache (`type=gha`)
-- **Build args:** Vite auth env vars and build metadata (`VITE_BUILD_COMMIT`, `VITE_BUILD_TAG`, `VITE_BUILD_BRANCH`, `VITE_BUILD_TIME`) are injected
+- **Build args:** Vite auth env vars (from the GitHub Actions environment) and build metadata (`VITE_BUILD_COMMIT`, `VITE_BUILD_TAG`, `VITE_BUILD_BRANCH`, `VITE_BUILD_TIME`) are injected. The Docker build job receives the environment name (`staging` or `production`) from `ci.yml`, so `VITE_CLIENT_ID`, `VITE_TENANT_ID`, `VITE_API_SCOPE`, and `VITE_AUTHORITY` are read from environment-scoped variables.
 
 ### Configurable Variables
 
@@ -214,6 +214,17 @@ Deploy secrets should be configured in GitHub Actions [environments](https://doc
 | `K8S_API_SERVER`   | (Optional) Override k3s API server URL        |
 | `TENANT_ID`        | Azure AD tenant GUID (for backend auth)       |
 | `API_AUDIENCE`     | API app registration audience                 |
+
+### Required Variables (GitHub Actions)
+
+Frontend auth variables must be configured as **environment variables** in the `staging` and `production` environments (Settings > Environments > Variables). These are baked into the frontend at Docker build time:
+
+| Variable           | Purpose                                                    |
+|--------------------|------------------------------------------------------------|
+| `VITE_CLIENT_ID`   | SPA app registration client ID from Entra                  |
+| `VITE_TENANT_ID`   | Entra tenant ID (GUID)                                     |
+| `VITE_API_SCOPE`   | Full API scope URI (e.g. `api://<api-id>/access_as_user`)  |
+| `VITE_AUTHORITY`   | (Optional) Override MSAL authority URL                      |
 
 Additional repository-level secrets:
 

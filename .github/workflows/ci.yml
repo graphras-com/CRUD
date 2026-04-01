@@ -185,6 +185,7 @@ jobs:
     uses: ./.github/workflows/build-and-push.yml
     with:
       push-image: true
+      environment: ${{ github.ref == 'refs/heads/main' && 'staging' || 'production' }}
     permissions:
       contents: read
       packages: write

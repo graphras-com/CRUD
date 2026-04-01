@@ -26,7 +26,7 @@ The `DATABASE_URL` variable supports automatic async driver rewriting:
 
 ## Frontend Environment Variables
 
-Set these in `frontend/.env` for local development, or pass as Docker build arguments for production builds.
+Set these in `frontend/.env` for local development, or pass as Docker build arguments for production builds. For CI/CD, these are configured as **environment variables** in the GitHub Actions `staging` and `production` environments (see [Deployment](deployment.md#required-variables-github-actions)).
 
 | Variable | Required | Default | Description |
 |---|---|---|---|

@@ -8,6 +8,11 @@ on:
         required: false
         type: boolean
         default: false
+      environment:
+        description: GitHub Actions environment to pull variables from (e.g. staging, production).
+        required: false
+        type: string
+        default: ""
 
 env:
   REGISTRY: ghcr.io
@@ -16,6 +21,7 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment || null }}
 
     steps:
       - name: Checkout repository
