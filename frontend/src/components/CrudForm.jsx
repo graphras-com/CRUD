@@ -173,7 +173,7 @@ export default function CrudForm({
   }
 
   function renderField(field, value, onChange) {
-    const id = `field-${field.name}`;
+    const id = field.id || `field-${field.name}`;
     const sourceItems = field.type === "select" ? getSourceItems(field) : [];
 
     switch (field.type) {

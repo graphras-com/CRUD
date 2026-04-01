@@ -39,7 +39,7 @@ test.describe("Items (detail-cards list)", () => {
     await page.goto("/items");
 
     // "engineering.backend" should render as "Engineering » Backend"
-    await expect(page.locator(".badge:has-text('Engineering \u00BB Backend')")).toBeVisible();
+    await expect(page.locator(".badge:has-text('Engineering \u00BB Backend')").first()).toBeVisible();
 
     // "design.ux" should render as "Design » UX" (if present) or "Design"
     const designBadges = page.locator(".badge:has-text('Design')");
@@ -65,12 +65,12 @@ test.describe("Items (detail-cards list)", () => {
     await expect(page).toHaveURL(/\/items\/new/);
     await expect(page.getByRole("heading", { name: "New Item" })).toBeVisible();
 
-    await page.fill("#item-name", "Workflow");
+    await page.fill("#field-name", "Workflow");
     await page
-      .locator("#detail-description-0")
+      .locator("#child-details-0-description")
       .fill("A sequence of steps to complete a process.");
     await page
-      .locator("#detail-group_id-0")
+      .locator("#child-details-0-group_id")
       .selectOption({ label: "Design" });
 
     await page.click('button:has-text("Create Item")');
