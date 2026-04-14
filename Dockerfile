@@ -1,7 +1,7 @@
 # ── Stage 1: Build the React frontend ──────────────────────────────
 # Pin to the build host platform so npm ci never runs under QEMU.
 # The output is static HTML/JS/CSS and is platform-independent.
-FROM --platform=$BUILDPLATFORM node:22-alpine AS frontend-build
+FROM --platform=$BUILDPLATFORM node:25-alpine AS frontend-build
 WORKDIR /build
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
